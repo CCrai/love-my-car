@@ -10,7 +10,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
+  deleteUser,
 } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { UserProfile } from '@/types';
@@ -34,10 +36,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (uid: string) => {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setUserProfile(docSnap.data() as UserProfile);
+    try {
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setUserProfile(docSnap.data() as UserProfile);
+        return;
+      }
+      setUserProfile(null);
+    } catch (error) {
+      if (error instanceof FirebaseError && error.code === 'permission-denied') {
+        throw new Error(
+          'Firestore rechazo leer el perfil de usuario. Revisa las reglas para permitir read/write en users/{uid} al usuario autenticado.'
+        );
+      }
+      throw error;
     }
   };
 
@@ -51,7 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser.uid);
+        try {
+          await fetchUserProfile(firebaseUser.uid);
+        } catch (error) {
+          console.error(error);
+          setUserProfile(null);
+        }
       } else {
         setUserProfile(null);
       }
@@ -73,7 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name,
       businesses: [],
     };
-    await setDoc(doc(db, 'users', newUser.uid), userDoc);
+    try {
+      await setDoc(doc(db, 'users', newUser.uid), userDoc);
+    } catch (error) {
+      await deleteUser(newUser).catch(() => undefined);
+      if (error instanceof FirebaseError && error.code === 'permission-denied') {
+        throw new Error(
+          'Firestore no permite crear users/{uid}. Ajusta las reglas para permitir write del propio usuario y vuelve a registrarte.'
+        );
+      }
+      throw error;
+    }
     setUserProfile(userDoc);
   };
 
@@ -89,7 +117,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: googleUser.displayName || '',
         businesses: [],
       };
-      await setDoc(docRef, userDoc);
+      try {
+        await setDoc(docRef, userDoc);
+      } catch (error) {
+        if (error instanceof FirebaseError && error.code === 'permission-denied') {
+          throw new Error(
+            'Firestore no permite crear users/{uid} para Google Sign-In. Ajusta reglas de Firestore y reintenta.'
+          );
+        }
+        throw error;
+      }
       setUserProfile(userDoc);
     }
   };
