@@ -13,5 +13,5 @@ export function formatDurationLong(entryTime: Date): string {
   if (diff < 60) return `${diff} minutos`;
   const hours = Math.floor(diff / 60);
   const mins = diff % 60;
-  return `${hours}h ${mins}min`;
+  return `${hours} horas ${mins} minutos`;
 }
