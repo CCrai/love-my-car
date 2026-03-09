@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useBusinessContext } from '@/contexts/BusinessContext';
-import { getActiveVisits } from '@/lib/firestore/visits';
+import { getVisitsByBusiness } from '@/lib/firestore/visits';
 import { getVehicleById } from '@/lib/firestore/vehicles';
 import { getServiceById } from '@/lib/firestore/services';
 import { Visit } from '@/types';
@@ -13,18 +13,29 @@ import Button from '@/components/ui/Button';
 import { formatDuration } from '@/lib/utils';
 import styles from './active.module.css';
 
+type TabType = 'active' | 'history';
+
+function getDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function ActiveVehiclesPage() {
   const { currentBusiness } = useBusinessContext();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabType>('active');
+  const [filterDay, setFilterDay] = useState('');
 
   useEffect(() => {
     if (!currentBusiness) return;
     setLoading(true);
-    getActiveVisits(currentBusiness.id)
-      .then(async (activeVisits) => {
+    getVisitsByBusiness(currentBusiness.id)
+      .then(async (allVisits) => {
         const enriched = await Promise.all(
-          activeVisits.map(async (visit) => {
+          allVisits.map(async (visit) => {
             const [vehicle, service] = await Promise.all([
               getVehicleById(visit.vehicleId),
               getServiceById(visit.serviceId),
@@ -32,18 +43,45 @@ export default function ActiveVehiclesPage() {
             return { ...visit, vehicle: vehicle || undefined, service: service || undefined };
           })
         );
-        setVisits(enriched);
+
+        const sorted = [...enriched].sort(
+          (a, b) => b.entryTime.getTime() - a.entryTime.getTime()
+        );
+        setVisits(sorted);
       })
       .finally(() => setLoading(false));
   }, [currentBusiness]);
 
+  const activeVisits = visits.filter((visit) => visit.status === 'active');
+  const historyVisitsBase = visits.filter((visit) => visit.status !== 'active');
+  const historyVisits = filterDay
+    ? historyVisitsBase.filter((visit) => getDateInputValue(visit.entryTime) === filterDay)
+    : historyVisitsBase;
+
   return (
     <>
-      <TopBar title="Vehículos Activos" />
+      <TopBar title="Vehículos" />
       <div className="main-content">
+        <div className={styles.tabs}>
+          <button
+            type="button"
+            className={`${styles.tabButton} ${tab === 'active' ? styles.activeTab : ''}`}
+            onClick={() => setTab('active')}
+          >
+            Activos ({activeVisits.length})
+          </button>
+          <button
+            type="button"
+            className={`${styles.tabButton} ${tab === 'history' ? styles.activeTab : ''}`}
+            onClick={() => setTab('history')}
+          >
+            Completados ({historyVisitsBase.length})
+          </button>
+        </div>
+
         {loading ? (
           <p>Cargando...</p>
-        ) : visits.length === 0 ? (
+        ) : tab === 'active' && activeVisits.length === 0 ? (
           <Card>
             <div className={styles.empty}>
               <span>🚗</span>
@@ -53,8 +91,8 @@ export default function ActiveVehiclesPage() {
               </Link>
             </div>
           </Card>
-        ) : (
-          <Card title={`${visits.length} vehículos activos`}>
+        ) : tab === 'active' ? (
+          <Card title={`${activeVisits.length} vehículos activos`}>
             <div className={styles.tableWrapper}>
               <table>
                 <thead>
@@ -69,7 +107,7 @@ export default function ActiveVehiclesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visits.map((visit) => (
+                  {activeVisits.map((visit) => (
                     <tr key={visit.id}>
                       <td>
                         <span className={styles.plate}>{visit.vehicle?.plate}</span>
@@ -97,6 +135,84 @@ export default function ActiveVehiclesPage() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        ) : (
+          <Card title="Historial de vehículos">
+            <div className={styles.filtersRow}>
+              <label htmlFor="day-filter" className={styles.filterLabel}>
+                Filtrar por día
+              </label>
+              <input
+                id="day-filter"
+                type="date"
+                value={filterDay}
+                onChange={(e) => setFilterDay(e.target.value)}
+                className={styles.dateInput}
+              />
+              {filterDay ? (
+                <Button variant="outline" size="sm" onClick={() => setFilterDay('')}>
+                  Limpiar
+                </Button>
+              ) : null}
+            </div>
+
+            {historyVisits.length === 0 ? (
+              <p className={styles.emptyHistory}>No hay registros para el filtro seleccionado.</p>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Placa</th>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Entrada</th>
+                      <th>Salida</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyVisits.map((visit) => (
+                      <tr key={visit.id}>
+                        <td>
+                          <span className={styles.plate}>{visit.vehicle?.plate}</span>
+                        </td>
+                        <td>
+                          <div>{visit.vehicle?.clientName}</div>
+                          <div className={styles.phone}>{visit.vehicle?.clientPhone}</div>
+                        </td>
+                        <td>{visit.service?.name || '—'}</td>
+                        <td>
+                          {visit.entryTime.toLocaleString('es', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: '2-digit',
+                          })}
+                        </td>
+                        <td>
+                          {visit.exitTime
+                            ? visit.exitTime.toLocaleString('es', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit',
+                              })
+                            : '—'}
+                        </td>
+                        <td>${visit.totalPrice || 0}</td>
+                        <td>
+                          <span className="badge badge-fixed">
+                            {visit.status === 'completed' ? 'Completado' : visit.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         )}
       </div>

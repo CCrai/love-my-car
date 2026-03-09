@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBusinessContext } from '@/contexts/BusinessContext';
 import { getVehicleByPlate, createVehicle } from '@/lib/firestore/vehicles';
-import { createVisit } from '@/lib/firestore/visits';
+import { createVisit, getActiveVisitByVehicle } from '@/lib/firestore/visits';
 import { getServicesByBusiness } from '@/lib/firestore/services';
 import { Service, Vehicle } from '@/types';
 import Button from '@/components/ui/Button';
@@ -12,6 +12,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Card from '@/components/ui/Card';
 import TopBar from '@/components/layout/TopBar';
+import { normalizePhoneForWhatsapp } from '@/lib/utils';
 import styles from './entry.module.css';
 
 export default function VehicleEntryPage() {
@@ -26,20 +27,34 @@ export default function VehicleEntryPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [whatsAppUrl, setWhatsAppUrl] = useState('');
+  const [showActiveRedirect, setShowActiveRedirect] = useState(false);
 
   useEffect(() => {
     if (currentBusiness) {
-      getServicesByBusiness(currentBusiness.id).then(setServices);
+      getServicesByBusiness(currentBusiness.id).then((result) => {
+        setServices(result);
+        const defaultService = result.find((service) => service.isDefault);
+        setSelectedServiceId((prev) => prev || defaultService?.id || result[0]?.id || '');
+      });
     }
   }, [currentBusiness]);
 
   const handleSearchPlate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentBusiness) return;
     setLoading(true);
     setError('');
+    setShowActiveRedirect(false);
     try {
       const existing = await getVehicleByPlate(plate);
       if (existing) {
+        const activeVisit = await getActiveVisitByVehicle(currentBusiness.id, existing.id);
+        if (activeVisit) {
+          setError('Este vehículo ya tiene una visita activa. Debes registrar su salida antes de volver a ingresarlo.');
+          setShowActiveRedirect(true);
+          return;
+        }
         setVehicle(existing);
       } else {
         setVehicle({ plate: plate.toUpperCase() });
@@ -52,6 +67,11 @@ export default function VehicleEntryPage() {
 
   const handleDetailsNext = (e: React.FormEvent) => {
     e.preventDefault();
+    if (services.length === 0) {
+      setError('No hay servicios configurados. Te redirigimos para crear uno.');
+      router.push('/services');
+      return;
+    }
     setStep('service');
   };
 
@@ -60,6 +80,8 @@ export default function VehicleEntryPage() {
     if (!currentBusiness || !selectedServiceId) return;
     setLoading(true);
     setError('');
+    setShowActiveRedirect(false);
+    setWhatsAppUrl('');
     try {
       let vehicleId = (vehicle as Vehicle).id;
       if (!vehicleId) {
@@ -71,7 +93,32 @@ export default function VehicleEntryPage() {
         );
         vehicleId = newVehicle.id;
       }
-      await createVisit(currentBusiness.id, vehicleId, selectedServiceId, notes);
+
+      const alreadyActive = await getActiveVisitByVehicle(currentBusiness.id, vehicleId);
+      if (alreadyActive) {
+        setError('Este vehículo ya se encuentra activo. No se puede registrar dos veces.');
+        setShowActiveRedirect(true);
+        return;
+      }
+
+      const createdVisit = await createVisit(currentBusiness.id, vehicleId, selectedServiceId, notes);
+
+      const phone = normalizePhoneForWhatsapp(vehicle.clientPhone || '');
+      if (phone) {
+        const entryDate = new Date().toLocaleString('es-AR');
+        const pickupCode = createdVisit.id.slice(-6).toUpperCase();
+        const message = [
+          `Hola ${vehicle.clientName || 'cliente'}!`,
+          `${currentBusiness.name} registró el ingreso de tu vehiculo ${vehicle.plate || plate}.`,
+          `Fecha y hora de entrada: ${entryDate}.`,
+          `Código de retiro: ${pickupCode}.`,
+          'Presenta este mensaje al momento de retirar.',
+        ].join('\n');
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        setWhatsAppUrl(url);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+
       setSuccess('¡Visita registrada exitosamente!');
       setTimeout(() => router.push('/vehicles/active'), 1500);
     } catch {
@@ -83,7 +130,7 @@ export default function VehicleEntryPage() {
 
   const serviceOptions = services.map((s) => ({
     value: s.id,
-    label: `${s.name} - $${s.price} (${s.type === 'hourly' ? 'Por hora' : 'Precio fijo'})`,
+    label: `${s.name}${s.isDefault ? ' (Sugerido)' : ''} - $${s.price} (${s.type === 'hourly' ? 'Por hora' : 'Precio fijo'})`,
   }));
 
   return (
@@ -104,8 +151,25 @@ export default function VehicleEntryPage() {
           </div>
         </div>
 
-        {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+        {error && (
+          <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+            <div>{error}</div>
+            {showActiveRedirect && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <Button size="sm" variant="outline" onClick={() => router.push('/vehicles/active')}>
+                  Ir a vehículos activos
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
         {success && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{success}</div>}
+        {whatsAppUrl && (
+          <div className="alert alert-success" style={{ marginBottom: '1rem' }}>
+            Mensaje de WhatsApp preparado. Si no se abrio automaticamente,{' '}
+            <a href={whatsAppUrl} target="_blank" rel="noreferrer">haz click aqui</a>.
+          </div>
+        )}
 
         {step === 'search' && (
           <Card title="Buscar vehículo por placa">
@@ -171,14 +235,13 @@ export default function VehicleEntryPage() {
             <form onSubmit={handleCreateVisit} className="form-group">
               {services.length === 0 ? (
                 <div className="alert alert-error">
-                  No hay servicios configurados. Primero debes crear un servicio.
+                  No hay servicios configurados. Primero debes crear uno en Gestionar Servicios.
                 </div>
               ) : (
                 <Select
                   id="service"
                   label="Servicio"
                   options={serviceOptions}
-                  placeholder="Selecciona un servicio"
                   value={selectedServiceId}
                   onChange={(e) => setSelectedServiceId(e.target.value)}
                   required

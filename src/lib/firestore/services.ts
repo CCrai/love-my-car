@@ -6,6 +6,8 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  deleteField,
+  writeBatch,
   query,
   where,
 } from 'firebase/firestore';
@@ -16,11 +18,46 @@ export async function createService(
   businessId: string,
   name: string,
   price: number,
-  type: Service['type']
+  type: Service['type'],
+  minimumChargeMinutes?: Service['minimumChargeMinutes'],
+  toleranceMinutes?: Service['toleranceMinutes'],
+  toleranceChargeMode?: Service['toleranceChargeMode'],
+  isDefault?: boolean
 ): Promise<Service> {
-  const data = { businessId, name, price, type };
+  const data: Omit<Service, 'id'> = {
+    businessId,
+    name,
+    price,
+    type,
+    isDefault: !!isDefault,
+  };
+  if (type === 'hourly') {
+    data.minimumChargeMinutes = minimumChargeMinutes ?? 60;
+    data.toleranceMinutes = toleranceMinutes ?? 15;
+    data.toleranceChargeMode = toleranceChargeMode ?? 'tolerance';
+  }
   const docRef = await addDoc(collection(db, 'services'), data);
+  if (isDefault) {
+    await setDefaultService(businessId, docRef.id);
+  }
   return { id: docRef.id, ...data };
+}
+
+export async function setDefaultService(
+  businessId: string,
+  serviceId: string
+): Promise<void> {
+  const q = query(collection(db, 'services'), where('businessId', '==', businessId));
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
+
+  snapshot.docs.forEach((serviceDoc) => {
+    batch.update(doc(db, 'services', serviceDoc.id), {
+      isDefault: serviceDoc.id === serviceId,
+    });
+  });
+
+  await batch.commit();
 }
 
 export async function getServicesByBusiness(businessId: string): Promise<Service[]> {
@@ -39,7 +76,15 @@ export async function updateService(
   id: string,
   data: Partial<Omit<Service, 'id'>>
 ): Promise<void> {
-  await updateDoc(doc(db, 'services', id), data);
+  const payload: Record<string, unknown> = { ...data };
+  if (data.type === 'fixed') {
+    payload.minimumChargeMinutes = deleteField();
+    payload.toleranceMinutes = deleteField();
+    payload.toleranceChargeMode = deleteField();
+    payload.minimumMinutes = deleteField();
+    payload.billingStepMinutes = deleteField();
+  }
+  await updateDoc(doc(db, 'services', id), payload);
 }
 
 export async function deleteService(id: string): Promise<void> {

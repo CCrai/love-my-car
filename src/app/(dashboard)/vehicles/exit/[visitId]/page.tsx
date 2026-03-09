@@ -9,7 +9,7 @@ import { Visit, Vehicle, Service } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import TopBar from '@/components/layout/TopBar';
-import { formatDurationLong } from '@/lib/utils';
+import { calculateHourlyPriceWithTolerance, formatDurationLong } from '@/lib/utils';
 import styles from './exit.module.css';
 
 export default function VehicleExitPage() {
@@ -50,10 +50,13 @@ export default function VehicleExitPage() {
     if (svc.type === 'fixed') {
       return svc.price;
     }
-    const now = new Date();
-    const diffMs = now.getTime() - entryTime.getTime();
-    const hours = Math.ceil(diffMs / (1000 * 60 * 60));
-    return hours * svc.price;
+    return calculateHourlyPriceWithTolerance(
+      entryTime,
+      svc.price,
+      svc.minimumChargeMinutes || svc.minimumMinutes || 60,
+      svc.toleranceMinutes || svc.billingStepMinutes || 15,
+      svc.toleranceChargeMode || 'tolerance'
+    );
   };
 
   const handleConfirmExit = async () => {
@@ -149,7 +152,7 @@ export default function VehicleExitPage() {
             </div>
             {service.type === 'hourly' && (
               <p className={styles.priceNote}>
-                * Se cobra por hora completa. ${service.price}/hora
+                * Minimo {service.minimumChargeMinutes || service.minimumMinutes || 60} min. Luego se evalua cada {service.toleranceMinutes || service.billingStepMinutes || 15} min y se cobra por bloque: {service.toleranceChargeMode === 'hour' ? '1 hora' : service.toleranceChargeMode === 'half_hour' ? 'media hora' : `${service.toleranceMinutes || service.billingStepMinutes || 15} min`}. ${service.price}/hora.
               </p>
             )}
 

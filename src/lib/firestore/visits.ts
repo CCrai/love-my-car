@@ -51,6 +51,41 @@ export async function getActiveVisits(businessId: string): Promise<Visit[]> {
   });
 }
 
+export async function getActiveVisitByVehicle(
+  businessId: string,
+  vehicleId: string
+): Promise<Visit | null> {
+  const q = query(
+    collection(db, 'visits'),
+    where('businessId', '==', businessId),
+    where('vehicleId', '==', vehicleId),
+    where('status', '==', 'active')
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  const data = snapshot.docs[0].data();
+  return {
+    id: snapshot.docs[0].id,
+    ...data,
+    entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
+    exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+  } as Visit;
+}
+
+export async function getVisitsByBusiness(businessId: string): Promise<Visit[]> {
+  const q = query(collection(db, 'visits'), where('businessId', '==', businessId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
+      exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+    } as Visit;
+  });
+}
+
 export async function getVisitById(id: string): Promise<Visit | null> {
   const docSnap = await getDoc(doc(db, 'visits', id));
   if (!docSnap.exists()) return null;

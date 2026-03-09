@@ -8,7 +8,7 @@ import styles from './Sidebar.module.css';
 const navItems = [
   { href: '/dashboard', label: '🏠 Dashboard' },
   { href: '/vehicles/entry', label: '🚗 Entrada de Vehículo' },
-  { href: '/vehicles/active', label: '📋 Vehículos Activos' },
+  { href: '/vehicles/active', label: '📋 Panel de trabajo' },
   { href: '/services', label: '⚙️ Servicios' },
   { href: '/employees', label: '👥 Empleados' },
 ];

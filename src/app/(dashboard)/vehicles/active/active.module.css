@@ -1,3 +1,26 @@
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tabButton {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.activeTab {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
 .empty {
   display: flex;
   flex-direction: column;
@@ -15,6 +38,33 @@
 
 .tableWrapper {
   overflow-x: auto;
+}
+
+.filtersRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.dateInput {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.5rem;
+}
+
+.emptyHistory {
+  color: #6b7280;
+  padding: 0.75rem 0;
 }
 
 .plate {

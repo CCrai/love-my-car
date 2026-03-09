@@ -35,6 +35,13 @@ export interface Service {
   name: string;
   price: number;
   type: 'fixed' | 'hourly';
+  isDefault?: boolean;
+  minimumChargeMinutes?: 30 | 60;
+  toleranceMinutes?: 15 | 30 | 60;
+  toleranceChargeMode?: 'tolerance' | 'half_hour' | 'hour';
+  // Legacy fields kept for backwards compatibility with existing documents.
+  minimumMinutes?: 30 | 60;
+  billingStepMinutes?: 15;
 }
 
 export interface Visit {
