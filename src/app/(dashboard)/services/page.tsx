@@ -88,8 +88,12 @@ export default function ServicesPage() {
 
   const handleDelete = async (serviceId: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este servicio?')) return;
-    await deleteService(serviceId);
-    setServices(services.filter((s) => s.id !== serviceId));
+    try {
+      await deleteService(serviceId);
+      setServices(services.filter((s) => s.id !== serviceId));
+    } catch {
+      setError('Error al eliminar el servicio');
+    }
   };
 
   const handleCancel = () => {

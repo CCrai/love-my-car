@@ -10,6 +10,7 @@ import { Visit } from '@/types';
 import TopBar from '@/components/layout/TopBar';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import { formatDuration } from '@/lib/utils';
 import styles from './active.module.css';
 
 export default function ActiveVehiclesPage() {
@@ -35,15 +36,6 @@ export default function ActiveVehiclesPage() {
       })
       .finally(() => setLoading(false));
   }, [currentBusiness]);
-
-  const formatDuration = (entryTime: Date) => {
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - entryTime.getTime()) / 60000);
-    if (diff < 60) return `${diff} min`;
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-    return `${hours}h ${mins}min`;
-  };
 
   return (
     <>

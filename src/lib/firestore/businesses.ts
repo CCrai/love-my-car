@@ -64,10 +64,6 @@ export async function getBusinessesByOwner(ownerId: string): Promise<Business[]>
 
 export async function getUserBusinesses(businessIds: string[]): Promise<Business[]> {
   if (businessIds.length === 0) return [];
-  const businesses: Business[] = [];
-  for (const id of businessIds) {
-    const b = await getBusinessById(id);
-    if (b) businesses.push(b);
-  }
-  return businesses;
+  const results = await Promise.all(businessIds.map((id) => getBusinessById(id)));
+  return results.filter((b): b is Business => b !== null);
 }

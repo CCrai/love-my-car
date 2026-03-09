@@ -9,6 +9,7 @@ import { Visit, Vehicle, Service } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import TopBar from '@/components/layout/TopBar';
+import { formatDurationLong } from '@/lib/utils';
 import styles from './exit.module.css';
 
 export default function VehicleExitPage() {
@@ -71,14 +72,6 @@ export default function VehicleExitPage() {
     }
   };
 
-  const formatDuration = (entryTime: Date) => {
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - entryTime.getTime()) / 60000);
-    if (diff < 60) return `${diff} minutos`;
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-    return `${hours}h ${mins}min`;
-  };
 
   if (loading) return <div style={{ padding: '2rem' }}>Cargando...</div>;
   if (!visit || !vehicle || !service) return <div style={{ padding: '2rem' }}>Visita no encontrada</div>;
@@ -147,7 +140,7 @@ export default function VehicleExitPage() {
               </div>
               <div className={styles.summaryItem}>
                 <span className={styles.summaryLabel}>Tiempo total</span>
-                <span className={styles.summaryValue}>{formatDuration(visit.entryTime)}</span>
+                <span className={styles.summaryValue}>{formatDurationLong(visit.entryTime)}</span>
               </div>
               <div className={styles.totalItem}>
                 <span className={styles.totalLabel}>Total a cobrar</span>

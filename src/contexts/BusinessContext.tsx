@@ -41,6 +41,9 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('selectedBusinessId', currentBusinessId);
         }
       })
+      .catch(() => {
+        // Business fetch failed; currentBusiness remains null
+      })
       .finally(() => setLoading(false));
   }, [currentBusinessId]);
 
