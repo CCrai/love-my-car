@@ -40,12 +40,38 @@
   overflow-x: auto;
 }
 
-.filtersRow {
+.headerRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.totalLabel {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.totalValue {
+  color: #059669;
+  font-size: 1.05rem;
 }
 
 .filterLabel {
@@ -96,9 +122,21 @@
     text-align: center;
   }
 
-  .filtersRow {
+  .headerRow {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .headerLeft {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .headerRight {
+    margin-left: 0;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .dateInput {

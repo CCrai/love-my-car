@@ -1,5 +1,4 @@
-export function formatDuration(entryTime: Date): string {
-  const now = new Date();
+export function formatDuration(entryTime: Date, now: Date = new Date()): string {
   const diff = Math.floor((now.getTime() - entryTime.getTime()) / 60000);
   if (diff < 60) return `${diff} min`;
   const hours = Math.floor(diff / 60);

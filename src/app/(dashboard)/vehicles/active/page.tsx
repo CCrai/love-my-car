@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useBusinessContext } from '@/contexts/BusinessContext';
-import { getVisitsByBusiness } from '@/lib/firestore/visits';
+import { subscribeVisitsByBusiness } from '@/lib/firestore/visits';
 import { getVehicleById } from '@/lib/firestore/vehicles';
 import { getServiceById } from '@/lib/firestore/services';
 import { Visit } from '@/types';
@@ -22,18 +22,35 @@ function getDateInputValue(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+const currencyFormatter = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 2,
+});
+
 export default function ActiveVehiclesPage() {
   const { currentBusiness } = useBusinessContext();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabType>('active');
-  const [filterDay, setFilterDay] = useState('');
+  const [filterDay, setFilterDay] = useState(getDateInputValue(new Date()));
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (!currentBusiness) return;
     setLoading(true);
-    getVisitsByBusiness(currentBusiness.id)
-      .then(async (allVisits) => {
+    let cancelled = false;
+
+    const unsubscribe = subscribeVisitsByBusiness(currentBusiness.id, (allVisits) => {
+      void (async () => {
         const enriched = await Promise.all(
           allVisits.map(async (visit) => {
             const [vehicle, service] = await Promise.all([
@@ -47,16 +64,30 @@ export default function ActiveVehiclesPage() {
         const sorted = [...enriched].sort(
           (a, b) => b.entryTime.getTime() - a.entryTime.getTime()
         );
+        if (cancelled) return;
         setVisits(sorted);
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [currentBusiness]);
 
   const activeVisits = visits.filter((visit) => visit.status === 'active');
   const historyVisitsBase = visits.filter((visit) => visit.status !== 'active');
-  const historyVisits = filterDay
-    ? historyVisitsBase.filter((visit) => getDateInputValue(visit.entryTime) === filterDay)
-    : historyVisitsBase;
+  const todayKey = getDateInputValue(new Date());
+  const todayRevenue = historyVisitsBase.reduce((sum, visit) => {
+    const referenceDate = visit.exitTime || visit.entryTime;
+    return getDateInputValue(referenceDate) === todayKey ? sum + (visit.totalPrice || 0) : sum;
+  }, 0);
+  const historyVisits = historyVisitsBase.filter((visit) => {
+    const referenceDate = visit.exitTime || visit.entryTime;
+    return getDateInputValue(referenceDate) === filterDay;
+  });
+  const filteredRevenue = historyVisits.reduce((sum, visit) => sum + (visit.totalPrice || 0), 0);
 
   return (
     <>
@@ -93,6 +124,12 @@ export default function ActiveVehiclesPage() {
           </Card>
         ) : tab === 'active' ? (
           <Card title={`${activeVisits.length} vehículos activos`}>
+            <div className={styles.headerRow}>
+              <div className={styles.headerRight}>
+                <span className={styles.totalLabel}>Recaudado hoy</span>
+                <strong className={styles.totalValue}>{currencyFormatter.format(todayRevenue)}</strong>
+              </div>
+            </div>
             <div className={styles.tableWrapper}>
               <table>
                 <thead>
@@ -123,7 +160,7 @@ export default function ActiveVehiclesPage() {
                         </span>
                       </td>
                       <td>{visit.entryTime.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className={styles.duration}>{formatDuration(visit.entryTime)}</td>
+                      <td className={styles.duration}>{formatDuration(visit.entryTime, now)}</td>
                       <td>{visit.notes || '—'}</td>
                       <td>
                         <Link href={`/vehicles/exit/${visit.id}`}>
@@ -138,22 +175,23 @@ export default function ActiveVehiclesPage() {
           </Card>
         ) : (
           <Card title="Historial de vehículos">
-            <div className={styles.filtersRow}>
-              <label htmlFor="day-filter" className={styles.filterLabel}>
-                Filtrar por día
-              </label>
-              <input
-                id="day-filter"
-                type="date"
-                value={filterDay}
-                onChange={(e) => setFilterDay(e.target.value)}
-                className={styles.dateInput}
-              />
-              {filterDay ? (
-                <Button variant="outline" size="sm" onClick={() => setFilterDay('')}>
-                  Limpiar
-                </Button>
-              ) : null}
+            <div className={styles.headerRow}>
+              <div className={styles.headerLeft}>
+                <label htmlFor="day-filter" className={styles.filterLabel}>
+                  Filtrar por día
+                </label>
+                <input
+                  id="day-filter"
+                  type="date"
+                  value={filterDay}
+                  onChange={(e) => setFilterDay(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </div>
+              <div className={styles.headerRight}>
+                <span className={styles.totalLabel}>Recaudado</span>
+                <strong className={styles.totalValue}>{currencyFormatter.format(filteredRevenue)}</strong>
+              </div>
             </div>
 
             {historyVisits.length === 0 ? (

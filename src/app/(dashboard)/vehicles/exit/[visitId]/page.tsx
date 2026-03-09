@@ -9,7 +9,7 @@ import { Visit, Vehicle, Service } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import TopBar from '@/components/layout/TopBar';
-import { calculateHourlyPriceWithTolerance, formatDurationLong } from '@/lib/utils';
+import { calculateHourlyPriceWithTolerance, formatDurationLong, normalizePhoneForWhatsapp } from '@/lib/utils';
 import styles from './exit.module.css';
 
 export default function VehicleExitPage() {
@@ -24,6 +24,7 @@ export default function VehicleExitPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [whatsAppUrl, setWhatsAppUrl] = useState('');
 
   useEffect(() => {
     if (!visitId) return;
@@ -60,12 +61,29 @@ export default function VehicleExitPage() {
   };
 
   const handleConfirmExit = async () => {
-    if (!visit || !service) return;
+    if (!visit || !service || !vehicle) return;
     setSubmitting(true);
     setError('');
+    setWhatsAppUrl('');
     try {
       const finalPrice = calculatePrice(visit.entryTime, service);
       await completeVisit(visitId, finalPrice);
+
+      if (service.type !== 'hourly') {
+        const phone = normalizePhoneForWhatsapp(vehicle.clientPhone || '');
+        if (phone) {
+          const message = [
+            `Hola ${vehicle.clientName || 'cliente'}!`,
+            `Tu vehiculo ${vehicle.plate} ya esta pronto para retirar.`,
+            `Total a abonar: $${finalPrice}.`,
+            'Te esperamos. Gracias!',
+          ].join('\n');
+          const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+          setWhatsAppUrl(url);
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }
+
       setSuccess(`Salida registrada. Total: $${finalPrice}`);
       setTimeout(() => router.push('/vehicles/active'), 1500);
     } catch {
@@ -85,6 +103,12 @@ export default function VehicleExitPage() {
       <div className="main-content">
         {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error}</div>}
         {success && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{success}</div>}
+        {whatsAppUrl && (
+          <div className="alert alert-success" style={{ marginBottom: '1rem' }}>
+            Aviso de vehiculo listo preparado en WhatsApp. Si no se abrio automaticamente,{' '}
+            <a href={whatsAppUrl} target="_blank" rel="noreferrer">haz click aqui</a>.
+          </div>
+        )}
 
         <div className={styles.grid}>
           <Card title="Información del vehículo">

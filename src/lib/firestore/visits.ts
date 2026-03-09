@@ -4,6 +4,7 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  onSnapshot,
   updateDoc,
   query,
   where,
@@ -83,6 +84,25 @@ export async function getVisitsByBusiness(businessId: string): Promise<Visit[]> 
       entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
       exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
     } as Visit;
+  });
+}
+
+export function subscribeVisitsByBusiness(
+  businessId: string,
+  onVisits: (visits: Visit[]) => void
+): () => void {
+  const q = query(collection(db, 'visits'), where('businessId', '==', businessId));
+  return onSnapshot(q, (snapshot) => {
+    const visits = snapshot.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
+        exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+      } as Visit;
+    });
+    onVisits(visits);
   });
 }
 
