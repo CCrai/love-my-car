@@ -1,0 +1,17 @@
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.formCard {
+  margin-bottom: 1.5rem;
+}
+
+.uid {
+  font-size: 0.8rem;
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: #374151;
+}
