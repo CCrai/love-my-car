@@ -1,0 +1,93 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.grid > :last-child {
+  grid-column: 1 / -1;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.plate {
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.summaryValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.totalItem {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eff6ff;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 2px solid #bfdbfe;
+  margin-top: 0.5rem;
+}
+
+.totalLabel {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.totalValue {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.priceNote {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-style: italic;
+  margin-top: 0.5rem;
+}

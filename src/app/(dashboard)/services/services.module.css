@@ -1,0 +1,15 @@
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.formCard {
+  margin-bottom: 1.5rem;
+}
+
+.price {
+  font-weight: 700;
+  color: #059669;
+  font-size: 1rem;
+}
