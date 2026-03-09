@@ -15,3 +15,17 @@
   border-radius: 4px;
   color: #374151;
 }
+
+@media (max-width: 768px) {
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+
+  .uid {
+    font-size: 0.72rem;
+  }
+}

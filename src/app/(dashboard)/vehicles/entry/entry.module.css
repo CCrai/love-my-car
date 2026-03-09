@@ -28,3 +28,19 @@
   color: #9ca3af;
   font-size: 1.25rem;
 }
+
+@media (max-width: 768px) {
+  .steps {
+    flex-wrap: wrap;
+    row-gap: 0.625rem;
+  }
+
+  .step {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .stepDivider {
+    display: none;
+  }
+}

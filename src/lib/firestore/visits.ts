@@ -86,6 +86,29 @@ export async function getVisitsByBusiness(businessId: string): Promise<Visit[]> 
   });
 }
 
+export async function getTodayRevenueByBusiness(businessId: string): Promise<number> {
+  const q = query(
+    collection(db, 'visits'),
+    where('businessId', '==', businessId),
+    where('status', '==', 'completed')
+  );
+  const snapshot = await getDocs(q);
+
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+  return snapshot.docs.reduce((sum, visitDoc) => {
+    const data = visitDoc.data();
+    const exitTime = data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null;
+    if (!exitTime) return sum;
+    if (exitTime >= dayStart && exitTime < dayEnd) {
+      return sum + (Number(data.totalPrice) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
 export async function getVisitById(id: string): Promise<Visit | null> {
   const docSnap = await getDoc(doc(db, 'visits', id));
   if (!docSnap.exists()) return null;

@@ -85,3 +85,27 @@
   font-weight: 600;
   color: #2563eb;
 }
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  .filtersRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dateInput {
+    width: 100%;
+  }
+
+  .empty {
+    padding: 1.5rem 0.75rem;
+  }
+}

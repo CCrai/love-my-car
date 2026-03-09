@@ -75,3 +75,19 @@
   font-weight: 600;
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .card {
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+    gap: 1rem;
+  }
+
+  .title {
+    font-size: 1.4rem;
+  }
+
+  .subtitle {
+    font-size: 0.88rem;
+  }
+}

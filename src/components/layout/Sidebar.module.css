@@ -98,3 +98,65 @@
   background: rgba(239, 68, 68, 0.25);
   color: #fecaca;
 }
+
+.mobileMenuButton,
+.mobileCloseButton,
+.backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .mobileMenuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0.75rem;
+    top: 0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 1.2rem;
+    z-index: 210;
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 198;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: min(82vw, 320px);
+    z-index: 205;
+  }
+
+  .open {
+    transform: translateX(0);
+  }
+
+  .logo {
+    justify-content: space-between;
+  }
+
+  .mobileCloseButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: #f1f5f9;
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+}

@@ -17,6 +17,7 @@ export interface Employee {
   id: string;
   businessId: string;
   userId: string;
+  email?: string;
   role: 'owner' | 'admin' | 'employee';
 }
 

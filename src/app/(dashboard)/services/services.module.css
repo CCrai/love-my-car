@@ -13,3 +13,17 @@
   color: #059669;
   font-size: 1rem;
 }
+
+@media (max-width: 768px) {
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+
+  .price {
+    font-size: 0.9rem;
+  }
+}

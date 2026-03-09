@@ -4,17 +4,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusinessContext } from '@/contexts/BusinessContext';
-import { getActiveVisits } from '@/lib/firestore/visits';
+import { getActiveVisits, getTodayRevenueByBusiness } from '@/lib/firestore/visits';
 import { getServicesByBusiness } from '@/lib/firestore/services';
 import { getEmployeesByBusiness } from '@/lib/firestore/employees';
 import TopBar from '@/components/layout/TopBar';
 import Card from '@/components/ui/Card';
 import styles from './dashboard.module.css';
 
+const currencyFormatter = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 2,
+});
+
 export default function DashboardPage() {
   const { userProfile } = useAuth();
   const { currentBusiness } = useBusinessContext();
-  const [stats, setStats] = useState({ activeVisits: 0, services: 0, employees: 0 });
+  const [stats, setStats] = useState({ activeVisits: 0, services: 0, employees: 0, todayRevenue: 0 });
 
   useEffect(() => {
     if (!currentBusiness) return;
@@ -22,11 +28,13 @@ export default function DashboardPage() {
       getActiveVisits(currentBusiness.id),
       getServicesByBusiness(currentBusiness.id),
       getEmployeesByBusiness(currentBusiness.id),
-    ]).then(([visits, services, employees]) => {
+      getTodayRevenueByBusiness(currentBusiness.id),
+    ]).then(([visits, services, employees, todayRevenue]) => {
       setStats({
         activeVisits: visits.length,
         services: services.length,
         employees: employees.length,
+        todayRevenue,
       });
     });
   }, [currentBusiness]);
@@ -75,6 +83,11 @@ export default function DashboardPage() {
             <div className={styles.statValue}>{stats.employees}</div>
             <div className={styles.statLabel}>Empleados</div>
           </Card>
+          <Card className={styles.statCard}>
+            <div className={styles.statIcon}>💰</div>
+            <div className={styles.statValueMoney}>{currencyFormatter.format(stats.todayRevenue)}</div>
+            <div className={styles.statLabel}>Recaudado hoy</div>
+          </Card>
         </div>
 
         <div className={styles.quickActions}>
@@ -86,7 +99,7 @@ export default function DashboardPage() {
             </Link>
             <Link href="/vehicles/active" className={styles.actionCard}>
               <span className={styles.actionIcon}>📋</span>
-              <span className={styles.actionLabel}>Ver activos</span>
+              <span className={styles.actionLabel}>Trabajos</span>
             </Link>
             <Link href="/services" className={styles.actionCard}>
               <span className={styles.actionIcon}>⚙️</span>

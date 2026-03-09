@@ -5,7 +5,8 @@ import { useBusinessContext } from '@/contexts/BusinessContext';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getEmployeesByBusiness,
-  inviteEmployee,
+  inviteEmployeeByEmail,
+  getUserEmailById,
   getUserRoleInBusiness,
 } from '@/lib/firestore/employees';
 import { Employee } from '@/types';
@@ -27,7 +28,7 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +38,16 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     if (!currentBusiness || !user) return;
-    getEmployeesByBusiness(currentBusiness.id).then(setEmployees);
+    getEmployeesByBusiness(currentBusiness.id).then(async (result) => {
+      const enriched = await Promise.all(
+        result.map(async (employee) => {
+          if (employee.email) return employee;
+          const resolvedEmail = await getUserEmailById(employee.userId);
+          return { ...employee, email: resolvedEmail || undefined };
+        })
+      );
+      setEmployees(enriched);
+    });
     getUserRoleInBusiness(user.uid, currentBusiness.id).then(setUserRole);
   }, [currentBusiness, user]);
 
@@ -48,13 +58,14 @@ export default function EmployeesPage() {
     setError('');
     setSuccess('');
     try {
-      const newEmployee = await inviteEmployee(currentBusiness.id, userId, role);
+      const newEmployee = await inviteEmployeeByEmail(currentBusiness.id, email, role);
       setEmployees([...employees, newEmployee]);
       setSuccess('Empleado invitado exitosamente');
-      setUserId('');
+      setEmail('');
       setShowForm(false);
-    } catch {
-      setError('Error al invitar al empleado. Verifica el ID de usuario.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al invitar al empleado.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -87,11 +98,12 @@ export default function EmployeesPage() {
             )}
             <form onSubmit={handleInvite} className="form-group">
               <Input
-                id="userId"
-                label="ID de usuario (UID de Firebase)"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Ingresa el UID del usuario"
+                id="email"
+                label="Email del empleado"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.toLowerCase().trim())}
+                placeholder="empleado@email.com"
                 required
               />
               <Select
@@ -120,6 +132,7 @@ export default function EmployeesPage() {
             <table>
               <thead>
                 <tr>
+                  <th>Email</th>
                   <th>ID de Usuario</th>
                   <th>Rol</th>
                 </tr>
@@ -127,6 +140,7 @@ export default function EmployeesPage() {
               <tbody>
                 {employees.map((emp) => (
                   <tr key={emp.id}>
+                    <td>{emp.email || 'No disponible'}</td>
                     <td>
                       <code className={styles.uid}>{emp.userId}</code>
                     </td>
