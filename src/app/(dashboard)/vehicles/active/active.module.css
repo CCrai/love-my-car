@@ -37,11 +37,20 @@
 }
 
 .tableWrapper {
-  overflow-x: auto;
+  height: clamp(16rem, calc(100dvh - 20rem), 70dvh);
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
 }
 
 .responsiveTable {
   width: 100%;
+}
+
+.responsiveTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .headerRow {
@@ -121,12 +130,9 @@
 }
 
 @media (max-width: 768px) {
-  .tabs {
-    flex-direction: column;
-  }
-
   .tabButton {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
     text-align: center;
   }
 
@@ -154,11 +160,15 @@
   .empty {
     padding: 1.5rem 0.75rem;
   }
+
+  .tableWrapper {
+    height: clamp(14rem, calc(100dvh - 18.5rem), 65dvh);
+  }
 }
 
 @media (max-width: 960px), (orientation: landscape) and (max-height: 540px) {
   .tableWrapper {
-    overflow: visible;
+    height: clamp(12rem, calc(100dvh - 14rem), 68dvh);
   }
 
   .responsiveTable,
