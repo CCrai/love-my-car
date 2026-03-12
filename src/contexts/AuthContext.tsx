@@ -11,6 +11,8 @@ import {
   signInWithPopup,
   updateProfile,
   deleteUser,
+  setPersistence,
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -34,6 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const ensureLocalSessionPersistence = async () => {
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+    } catch (error) {
+      // Keep auth usable even if browser storage is restricted.
+      console.warn('No se pudo configurar persistencia local de sesion en Firebase Auth.', error);
+    }
+  };
 
   const fetchUserProfile = async (uid: string) => {
     try {
@@ -61,6 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    void ensureLocalSessionPersistence();
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -79,10 +92,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    await ensureLocalSessionPersistence();
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    await ensureLocalSessionPersistence();
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: name });
     const userDoc: UserProfile = {
@@ -106,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    await ensureLocalSessionPersistence();
     const provider = new GoogleAuthProvider();
     const { user: googleUser } = await signInWithPopup(auth, provider);
     const docRef = doc(db, 'users', googleUser.uid);
