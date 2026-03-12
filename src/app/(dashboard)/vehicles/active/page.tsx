@@ -148,6 +148,7 @@ export default function ActiveVehiclesPage() {
                     <tr key={visit.id}>
                       <td data-label="Placa">
                         <span className={styles.plate}>{visit.vehicle?.plate}</span>
+                        {visit.vehicle?.brand && <div className={styles.vehicleMeta}>{visit.vehicle.brand}</div>}
                       </td>
                       <td data-label="Cliente">
                         <div>{visit.vehicle?.clientName}</div>
@@ -215,6 +216,7 @@ export default function ActiveVehiclesPage() {
                       <tr key={visit.id}>
                         <td data-label="Placa">
                           <span className={styles.plate}>{visit.vehicle?.plate}</span>
+                          {visit.vehicle?.brand && <div className={styles.vehicleMeta}>{visit.vehicle.brand}</div>}
                         </td>
                         <td data-label="Cliente">
                           <div>{visit.vehicle?.clientName}</div>

@@ -22,6 +22,7 @@ export async function createService(
   minimumChargeMinutes?: Service['minimumChargeMinutes'],
   toleranceMinutes?: Service['toleranceMinutes'],
   toleranceChargeMode?: Service['toleranceChargeMode'],
+  whatsappMessageTemplate?: string,
   isDefault?: boolean
 ): Promise<Service> {
   const data: Omit<Service, 'id'> = {
@@ -30,6 +31,7 @@ export async function createService(
     price,
     type,
     isDefault: !!isDefault,
+    whatsappMessageTemplate: whatsappMessageTemplate?.trim() || '',
   };
   if (type === 'hourly') {
     data.minimumChargeMinutes = minimumChargeMinutes ?? 60;

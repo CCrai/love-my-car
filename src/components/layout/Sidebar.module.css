@@ -99,30 +99,12 @@
   color: #fecaca;
 }
 
-.mobileMenuButton,
 .mobileCloseButton,
 .backdrop {
   display: none;
 }
 
 @media (max-width: 1024px) {
-  .mobileMenuButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    left: 0.75rem;
-    top: 0.75rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #0f172a;
-    font-size: 1.2rem;
-    z-index: 210;
-  }
-
   .backdrop {
     display: block;
     position: fixed;

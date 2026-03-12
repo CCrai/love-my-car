@@ -53,6 +53,7 @@ export default function ServicesPage() {
     price: '',
     type: 'fixed' as Service['type'],
     isDefault: false,
+    whatsappMessageTemplate: '',
     minimumChargeMinutes: '60' as '30' | '60',
     toleranceMinutes: '15' as '15' | '30' | '60',
     toleranceChargeMode: 'tolerance' as 'tolerance' | 'half_hour' | 'hour',
@@ -86,6 +87,7 @@ export default function ServicesPage() {
           price: parseFloat(formData.price),
           type: formData.type,
           isDefault: formData.isDefault,
+          whatsappMessageTemplate: formData.whatsappMessageTemplate,
         };
         if (formData.type === 'hourly') {
           updatePayload.minimumChargeMinutes = Number(formData.minimumChargeMinutes) as 30 | 60;
@@ -105,6 +107,7 @@ export default function ServicesPage() {
           formData.type === 'hourly' ? (Number(formData.minimumChargeMinutes) as 30 | 60) : undefined,
           formData.type === 'hourly' ? (Number(formData.toleranceMinutes) as 15 | 30 | 60) : undefined,
           formData.type === 'hourly' ? formData.toleranceChargeMode : undefined,
+          formData.whatsappMessageTemplate,
           formData.isDefault
         );
       }
@@ -116,6 +119,7 @@ export default function ServicesPage() {
         price: '',
         type: 'fixed',
         isDefault: false,
+        whatsappMessageTemplate: '',
         minimumChargeMinutes: '60',
         toleranceMinutes: '15',
         toleranceChargeMode: 'tolerance',
@@ -134,6 +138,7 @@ export default function ServicesPage() {
       price: String(service.price),
       type: service.type,
       isDefault: !!service.isDefault,
+      whatsappMessageTemplate: service.whatsappMessageTemplate || '',
       minimumChargeMinutes: String(service.minimumChargeMinutes || service.minimumMinutes || 60) as '30' | '60',
       toleranceMinutes: String(service.toleranceMinutes || service.billingStepMinutes || 15) as '15' | '30' | '60',
       toleranceChargeMode: (service.toleranceChargeMode || 'tolerance') as 'tolerance' | 'half_hour' | 'hour',
@@ -169,6 +174,7 @@ export default function ServicesPage() {
       price: '',
       type: 'fixed',
       isDefault: false,
+      whatsappMessageTemplate: '',
       minimumChargeMinutes: '60',
       toleranceMinutes: '15',
       toleranceChargeMode: 'tolerance',
@@ -223,6 +229,22 @@ export default function ServicesPage() {
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as Service['type'] })}
               />
+              <div className={styles.templateGroup}>
+                <label htmlFor="service-whatsapp-template" className={styles.templateLabel}>
+                  Mensaje de WhatsApp (editable)
+                </label>
+                <textarea
+                  id="service-whatsapp-template"
+                  className={styles.templateInput}
+                  rows={6}
+                  value={formData.whatsappMessageTemplate}
+                  onChange={(e) => setFormData({ ...formData, whatsappMessageTemplate: e.target.value })}
+                  placeholder="Si lo dejas vacio, se usa el mensaje por defecto."
+                />
+                <p className={styles.templateHelp}>
+                  Variables disponibles: {'{cliente}'} {'{negocio}'} {'{placa}'} {'{marca}'} {'{servicio}'} {'{fechaEntrada}'} {'{codigoRetiro}'}
+                </p>
+              </div>
               {formData.type === 'hourly' && (
                 <>
                   <Select
@@ -291,6 +313,7 @@ export default function ServicesPage() {
                   <th>Tipo</th>
                   <th>Por defecto</th>
                   <th>Regla</th>
+                  <th>WhatsApp</th>
                   <th>Precio</th>
                   {canManage && <th>Acciones</th>}
                 </tr>
@@ -326,6 +349,11 @@ export default function ServicesPage() {
                           }`
                         : 'Tarifa única'}
                     </td>
+                    <td>
+                      {service.whatsappMessageTemplate?.trim()
+                        ? 'Personalizado'
+                        : 'Por defecto'}
+                    </td>
                     <td className={styles.price}>${service.price}</td>
                     {canManage && (
                       <td>
@@ -333,14 +361,14 @@ export default function ServicesPage() {
                           <Button size="sm" variant="outline" onClick={() => handleEdit(service)}>
                             Editar
                           </Button>
+                          <Button size="sm" variant="danger" onClick={() => handleDelete(service.id)}>
+                            Eliminar
+                          </Button>
                           {!service.isDefault && (
                             <Button size="sm" variant="secondary" onClick={() => handleSetDefault(service.id)}>
                               Marcar por defecto
                             </Button>
                           )}
-                          <Button size="sm" variant="danger" onClick={() => handleDelete(service.id)}>
-                            Eliminar
-                          </Button>
                         </div>
                       </td>
                     )}

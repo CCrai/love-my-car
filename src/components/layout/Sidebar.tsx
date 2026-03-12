@@ -20,6 +20,12 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
+    const onOpen = () => setMobileOpen(true);
+    window.addEventListener('sidebar:open', onOpen);
+    return () => window.removeEventListener('sidebar:open', onOpen);
+  }, []);
+
+  useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
@@ -36,17 +42,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {!mobileOpen && (
-        <button
-          type="button"
-          className={styles.mobileMenuButton}
-          onClick={() => setMobileOpen(true)}
-          aria-label="Abrir menu"
-        >
-          ☰
-        </button>
-      )}
-
       {mobileOpen && <div className={styles.backdrop} onClick={() => setMobileOpen(false)} />}
 
       <aside className={`${styles.sidebar} ${mobileOpen ? styles.open : ''}`}>

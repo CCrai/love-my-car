@@ -120,6 +120,12 @@
   color: #6b7280;
 }
 
+.vehicleMeta {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
 .duration {
   font-weight: 600;
   color: #2563eb;

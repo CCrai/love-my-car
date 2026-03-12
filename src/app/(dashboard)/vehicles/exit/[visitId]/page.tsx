@@ -8,6 +8,7 @@ import { getServiceById } from '@/lib/firestore/services';
 import { Visit, Vehicle, Service } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
 import TopBar from '@/components/layout/TopBar';
 import { calculateHourlyPriceWithTolerance, formatDurationLong, normalizePhoneForWhatsapp } from '@/lib/utils';
 import styles from './exit.module.css';
@@ -20,11 +21,23 @@ export default function VehicleExitPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [service, setService] = useState<Service | null>(null);
   const [calculatedPrice, setCalculatedPrice] = useState(0);
+  const [finalPriceInput, setFinalPriceInput] = useState('0');
+  const [isPriceEditable, setIsPriceEditable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [whatsAppUrl, setWhatsAppUrl] = useState('');
+
+  useEffect(() => {
+    if (!isPriceEditable) return;
+    const input = document.getElementById('finalPrice') as HTMLInputElement | null;
+    if (!input) return;
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }, [isPriceEditable]);
 
   useEffect(() => {
     if (!visitId) return;
@@ -42,6 +55,8 @@ export default function VehicleExitPage() {
         if (svc) {
           const price = calculatePrice(v.entryTime, svc);
           setCalculatedPrice(price);
+          setFinalPriceInput(String(price));
+          setIsPriceEditable(false);
         }
       })
       .finally(() => setLoading(false));
@@ -66,7 +81,14 @@ export default function VehicleExitPage() {
     setError('');
     setWhatsAppUrl('');
     try {
-      const finalPrice = calculatePrice(visit.entryTime, service);
+      const parsedFinalPrice = Number(finalPriceInput.replace(',', '.'));
+      if (!Number.isFinite(parsedFinalPrice) || parsedFinalPrice < 0) {
+        setError('Ingresa un precio valido mayor o igual a 0.');
+        setSubmitting(false);
+        return;
+      }
+
+      const finalPrice = Math.round(parsedFinalPrice * 100) / 100;
       await completeVisit(visitId, finalPrice);
 
       if (service.type !== 'hourly') {
@@ -97,6 +119,10 @@ export default function VehicleExitPage() {
   if (loading) return <div style={{ padding: '2rem' }}>Cargando...</div>;
   if (!visit || !vehicle || !service) return <div style={{ padding: '2rem' }}>Visita no encontrada</div>;
 
+  const handleTogglePriceEdit = () => {
+    setIsPriceEditable((prev) => !prev);
+  };
+
   return (
     <>
       <TopBar title="Registrar Salida" />
@@ -116,6 +142,10 @@ export default function VehicleExitPage() {
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Placa</span>
                 <span className={styles.plate}>{vehicle.plate}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Marca</span>
+                <span>{vehicle.brand || '—'}</span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Cliente</span>
@@ -170,8 +200,47 @@ export default function VehicleExitPage() {
                 <span className={styles.summaryValue}>{formatDurationLong(visit.entryTime)}</span>
               </div>
               <div className={styles.totalItem}>
-                <span className={styles.totalLabel}>Total a cobrar</span>
-                <span className={styles.totalValue}>${calculatedPrice}</span>
+                <div className={styles.totalLabelGroup}>
+                  <span className={styles.totalLabel}>Total a cobrar</span>
+                  <button
+                    type="button"
+                    className={styles.editPriceButton}
+                    onClick={handleTogglePriceEdit}
+                    aria-label={isPriceEditable ? 'Bloquear edicion de precio' : 'Editar precio'}
+                    title={isPriceEditable ? 'Bloquear edicion' : 'Editar precio'}
+                  >
+                    ✎
+                  </button>
+                </div>
+                <span className={styles.totalValue}>${finalPriceInput || '0'}</span>
+              </div>
+            </div>
+            <div className={styles.priceEditor}>
+              <Input
+                id="finalPrice"
+                label={isPriceEditable ? 'Precio final (editable)' : 'Precio final (bloqueado)'}
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={finalPriceInput}
+                onChange={(e) => setFinalPriceInput(e.target.value)}
+                placeholder="0"
+                disabled={!isPriceEditable}
+                className={isPriceEditable ? styles.priceInputEditable : styles.priceInputLocked}
+              />
+              <div className={styles.priceActions}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={styles.fullWidthButton}
+                  onClick={() => {
+                    setFinalPriceInput(String(calculatedPrice));
+                    setIsPriceEditable(false);
+                  }}
+                >
+                  Usar precio sugerido (${calculatedPrice})
+                </Button>
               </div>
             </div>
             {service.type === 'hourly' && (

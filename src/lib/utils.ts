@@ -46,3 +46,12 @@ export function calculateHourlyPriceWithTolerance(
 export function normalizePhoneForWhatsapp(phone: string): string {
   return phone.replace(/\D/g, '');
 }
+
+export function applyMessageTemplate(
+  template: string,
+  values: Record<string, string>
+): string {
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (fullMatch, key: string) => {
+    return values[key] ?? fullMatch;
+  });
+}

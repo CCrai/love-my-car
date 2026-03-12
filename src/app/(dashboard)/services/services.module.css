@@ -14,6 +14,41 @@
   font-size: 1rem;
 }
 
+.templateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.templateLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.templateInput {
+  width: 100%;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 8.5rem;
+  font-family: inherit;
+}
+
+.templateInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.templateHelp {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
 @media (max-width: 768px) {
   .actions {
     justify-content: stretch;
@@ -25,5 +60,9 @@
 
   .price {
     font-size: 0.9rem;
+  }
+
+  .templateInput {
+    min-height: 7.5rem;
   }
 }

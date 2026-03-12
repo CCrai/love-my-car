@@ -24,6 +24,8 @@ export interface Employee {
 export interface Vehicle {
   id: string;
   plate: string;
+  brand?: string;
+  model?: string;
   clientName: string;
   clientPhone: string;
   notes: string;
@@ -37,6 +39,7 @@ export interface Service {
   price: number;
   type: 'fixed' | 'hourly';
   isDefault?: boolean;
+  whatsappMessageTemplate?: string;
   minimumChargeMinutes?: 30 | 60;
   toleranceMinutes?: 15 | 30 | 60;
   toleranceChargeMode?: 'tolerance' | 'half_hour' | 'hour';

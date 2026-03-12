@@ -73,6 +73,12 @@
   margin-top: 0.5rem;
 }
 
+.totalLabelGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .totalLabel {
   font-size: 1rem;
   font-weight: 600;
@@ -83,6 +89,52 @@
   font-size: 2rem;
   font-weight: 800;
   color: #1d4ed8;
+}
+
+.priceEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.editPriceButton {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.editPriceButton:hover {
+  background: #bfdbfe;
+  border-color: #93c5fd;
+}
+
+.priceInputLocked {
+  background: #f8fafc;
+  border-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.priceInputEditable {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+}
+
+.priceActions {
+  display: flex;
+  justify-content: stretch;
+}
+
+.fullWidthButton {
+  width: 100%;
 }
 
 .priceNote {
@@ -118,5 +170,9 @@
 
   .totalValue {
     font-size: 1.6rem;
+  }
+
+  .priceEditor {
+    align-items: stretch;
   }
 }

@@ -13,12 +13,16 @@ import { Vehicle } from '@/types';
 
 export async function createVehicle(
   plate: string,
+  brand: string,
+  model: string,
   clientName: string,
   clientPhone: string,
   notes: string = ''
 ): Promise<Vehicle> {
   const data = {
     plate: plate.toUpperCase(),
+    brand: brand.trim(),
+    model: model.trim(),
     clientName,
     clientPhone,
     notes,

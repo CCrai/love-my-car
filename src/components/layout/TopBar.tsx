@@ -10,9 +10,23 @@ interface TopBarProps {
 export default function TopBar({ title }: TopBarProps) {
   const { currentBusiness } = useBusinessContext();
 
+  const handleOpenMenu = () => {
+    window.dispatchEvent(new Event('sidebar:open'));
+  };
+
   return (
     <header className={styles.topbar}>
-      <h1 className={styles.title}>{title}</h1>
+      <div className={styles.titleGroup}>
+        <button
+          type="button"
+          className={styles.mobileMenuButton}
+          onClick={handleOpenMenu}
+          aria-label="Abrir menu"
+        >
+          ☰
+        </button>
+        <h1 className={styles.title}>{title}</h1>
+      </div>
       {currentBusiness && (
         <div className={styles.businessBadge}>
           <span className={styles.businessType}>{currentBusiness.type}</span>
