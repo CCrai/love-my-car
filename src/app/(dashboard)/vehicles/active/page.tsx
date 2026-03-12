@@ -131,7 +131,7 @@ export default function ActiveVehiclesPage() {
               </div>
             </div>
             <div className={styles.tableWrapper}>
-              <table>
+              <table className={styles.responsiveTable}>
                 <thead>
                   <tr>
                     <th>Placa</th>
@@ -146,23 +146,23 @@ export default function ActiveVehiclesPage() {
                 <tbody>
                   {activeVisits.map((visit) => (
                     <tr key={visit.id}>
-                      <td>
+                      <td data-label="Placa">
                         <span className={styles.plate}>{visit.vehicle?.plate}</span>
                       </td>
-                      <td>
+                      <td data-label="Cliente">
                         <div>{visit.vehicle?.clientName}</div>
                         <div className={styles.phone}>{visit.vehicle?.clientPhone}</div>
                       </td>
-                      <td>
+                      <td data-label="Servicio">
                         <div>{visit.service?.name}</div>
                         <span className={`badge ${visit.service?.type === 'hourly' ? 'badge-hourly' : 'badge-fixed'}`}>
                           {visit.service?.type === 'hourly' ? 'Por hora' : 'Precio fijo'}
                         </span>
                       </td>
-                      <td>{visit.entryTime.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className={styles.duration}>{formatDuration(visit.entryTime, now)}</td>
-                      <td>{visit.notes || '—'}</td>
-                      <td>
+                      <td data-label="Entrada">{visit.entryTime.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</td>
+                      <td data-label="Tiempo" className={styles.duration}>{formatDuration(visit.entryTime, now)}</td>
+                      <td data-label="Notas">{visit.notes || '—'}</td>
+                      <td data-label="Acción" className={styles.actionCell}>
                         <Link href={`/vehicles/exit/${visit.id}`}>
                           <Button size="sm">Registrar salida</Button>
                         </Link>
@@ -198,7 +198,7 @@ export default function ActiveVehiclesPage() {
               <p className={styles.emptyHistory}>No hay registros para el filtro seleccionado.</p>
             ) : (
               <div className={styles.tableWrapper}>
-                <table>
+                <table className={styles.responsiveTable}>
                   <thead>
                     <tr>
                       <th>Placa</th>
@@ -213,15 +213,15 @@ export default function ActiveVehiclesPage() {
                   <tbody>
                     {historyVisits.map((visit) => (
                       <tr key={visit.id}>
-                        <td>
+                        <td data-label="Placa">
                           <span className={styles.plate}>{visit.vehicle?.plate}</span>
                         </td>
-                        <td>
+                        <td data-label="Cliente">
                           <div>{visit.vehicle?.clientName}</div>
                           <div className={styles.phone}>{visit.vehicle?.clientPhone}</div>
                         </td>
-                        <td>{visit.service?.name || '—'}</td>
-                        <td>
+                        <td data-label="Servicio">{visit.service?.name || '—'}</td>
+                        <td data-label="Entrada">
                           {visit.entryTime.toLocaleString('es', {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -229,7 +229,7 @@ export default function ActiveVehiclesPage() {
                             month: '2-digit',
                           })}
                         </td>
-                        <td>
+                        <td data-label="Salida">
                           {visit.exitTime
                             ? visit.exitTime.toLocaleString('es', {
                                 hour: '2-digit',
@@ -239,8 +239,8 @@ export default function ActiveVehiclesPage() {
                               })
                             : '—'}
                         </td>
-                        <td>${visit.totalPrice || 0}</td>
-                        <td>
+                        <td data-label="Total">${visit.totalPrice || 0}</td>
+                        <td data-label="Estado">
                           <span className="badge badge-fixed">
                             {visit.status === 'completed' ? 'Completado' : visit.status}
                           </span>

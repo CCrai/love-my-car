@@ -40,6 +40,10 @@
   overflow-x: auto;
 }
 
+.responsiveTable {
+  width: 100%;
+}
+
 .headerRow {
   display: flex;
   align-items: flex-end;
@@ -112,6 +116,10 @@
   color: #2563eb;
 }
 
+.actionCell {
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .tabs {
     flex-direction: column;
@@ -145,5 +153,71 @@
 
   .empty {
     padding: 1.5rem 0.75rem;
+  }
+}
+
+@media (max-width: 960px), (orientation: landscape) and (max-height: 540px) {
+  .tableWrapper {
+    overflow: visible;
+  }
+
+  .responsiveTable,
+  .responsiveTable thead,
+  .responsiveTable tbody,
+  .responsiveTable tr,
+  .responsiveTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .responsiveTable thead {
+    display: none;
+  }
+
+  .responsiveTable tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .responsiveTable tr {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.8rem;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    padding: 0.2rem 0;
+  }
+
+  .responsiveTable td {
+    border: 0;
+    border-bottom: 1px dashed #e5e7eb;
+    padding: 0.6rem 0.9rem;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    min-height: 2.25rem;
+  }
+
+  .responsiveTable td:last-child {
+    border-bottom: 0;
+  }
+
+  .responsiveTable td::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+  }
+
+  .responsiveTable td > div {
+    text-align: right;
+  }
+
+  .actionCell {
+    justify-content: flex-end;
   }
 }
