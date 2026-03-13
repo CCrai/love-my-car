@@ -213,6 +213,24 @@
   color: #64748b;
 }
 
+.historyTaskList {
+  margin: 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.historyTaskItem {
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+.historyTaskEmpty {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
 @media (max-width: 768px) {
   .tabButton {
     flex: 1 1 0;

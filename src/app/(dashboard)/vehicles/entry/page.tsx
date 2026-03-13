@@ -101,7 +101,7 @@ export default function VehicleEntryPage() {
     setError("");
     setShowActiveRedirect(false);
     try {
-      const existing = await getVehicleByPlate(plate);
+      const existing = await getVehicleByPlate(currentBusiness.id, plate);
       if (existing) {
         const activeVisit = await getActiveVisitByVehicle(
           currentBusiness.id,
@@ -150,6 +150,7 @@ export default function VehicleEntryPage() {
       let vehicleId = (vehicle as Vehicle).id;
       if (!vehicleId) {
         const newVehicle = await createVehicle(
+          currentBusiness.id,
           vehicle.plate || plate,
           vehicle.brand || "",
           vehicle.model || "",

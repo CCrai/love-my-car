@@ -6,7 +6,9 @@ import {
   getDocs,
   limit,
   query,
+  updateDoc,
   where,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Employee, UserProfile } from '@/types';
@@ -58,7 +60,13 @@ export async function inviteEmployeeByEmail(
     throw new Error('Ese usuario ya forma parte de este negocio.');
   }
 
-  return inviteEmployee(businessId, userProfile.uid, userProfile.email, role);
+  const invitedEmployee = await inviteEmployee(businessId, userProfile.uid, userProfile.email, role);
+
+  await updateDoc(doc(db, 'users', userProfile.uid), {
+    businesses: arrayUnion(businessId),
+  });
+
+  return invitedEmployee;
 }
 
 export async function getEmployeesByBusiness(businessId: string): Promise<Employee[]> {

@@ -325,6 +325,7 @@ export default function ActiveVehiclesPage() {
                       <th>Servicio</th>
                       <th>Entrada</th>
                       <th>Salida</th>
+                      <th>Tareas realizadas</th>
                       <th>Total</th>
                       <th>Estado</th>
                     </tr>
@@ -358,6 +359,21 @@ export default function ActiveVehiclesPage() {
                                 month: '2-digit',
                               })
                             : '—'}
+                        </td>
+                        <td data-label="Tareas realizadas">
+                          {(visit.taskChecklist || []).filter((task) => task.completed).length === 0 ? (
+                            <span className={styles.historyTaskEmpty}>Sin tareas realizadas</span>
+                          ) : (
+                            <ul className={styles.historyTaskList}>
+                              {(visit.taskChecklist || [])
+                                .filter((task) => task.completed)
+                                .map((task) => (
+                                  <li key={task.id} className={styles.historyTaskItem}>
+                                    {task.title}
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
                         </td>
                         <td data-label="Total">${visit.totalPrice || 0}</td>
                         <td data-label="Estado">

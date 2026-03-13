@@ -10,9 +10,9 @@ const navItems = [
   { href: '/dashboard', label: '🏠 Dashboard' },
   { href: '/vehicles/entry', label: '🚗 Registrar Entrada' },
   { href: '/vehicles/active', label: '📋 Trabajos' },
-  { href: '/business', label: '🏢 Mi negocio' },
   { href: '/services', label: '⚙️ Servicios' },
   { href: '/employees', label: '👥 Empleados' },
+  { href: '/business', label: '🏢 Mi negocio' },
 ];
 
 export default function Sidebar() {

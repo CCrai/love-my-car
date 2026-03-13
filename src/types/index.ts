@@ -33,6 +33,7 @@ export interface Employee {
 
 export interface Vehicle {
   id: string;
+  businessId: string;
   plate: string;
   brand?: string;
   model?: string;

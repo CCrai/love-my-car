@@ -92,7 +92,7 @@ export default function LoginPage() {
           <span>o</span>
         </div>
 
-        <Button
+        {/* <Button
           variant="outline"
           size="lg"
           style={{ width: '100%' }}
@@ -100,7 +100,7 @@ export default function LoginPage() {
           disabled={loading}
         >
           🔵 Continuar con Google
-        </Button>
+        </Button> */}
 
         <p className={styles.footer}>
           ¿No tienes cuenta?{' '}

@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase';
 import { Vehicle } from '@/types';
 
 export async function createVehicle(
+  businessId: string,
   plate: string,
   brand: string,
   model: string,
@@ -20,6 +21,7 @@ export async function createVehicle(
   notes: string = ''
 ): Promise<Vehicle> {
   const data = {
+    businessId,
     plate: plate.toUpperCase(),
     brand: brand.trim(),
     model: model.trim(),
@@ -32,9 +34,10 @@ export async function createVehicle(
   return { id: docRef.id, ...data, createdAt: new Date() };
 }
 
-export async function getVehicleByPlate(plate: string): Promise<Vehicle | null> {
+export async function getVehicleByPlate(businessId: string, plate: string): Promise<Vehicle | null> {
   const q = query(
     collection(db, 'vehicles'),
+    where('businessId', '==', businessId),
     where('plate', '==', plate.toUpperCase())
   );
   const snapshot = await getDocs(q);
