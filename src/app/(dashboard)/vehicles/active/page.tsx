@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useBusinessContext } from '@/contexts/BusinessContext';
-import { subscribeVisitsByBusiness } from '@/lib/firestore/visits';
+import { subscribeVisitsByBusiness, updateVisitTaskChecklist } from '@/lib/firestore/visits';
 import { getVehicleById } from '@/lib/firestore/vehicles';
 import { getServiceById } from '@/lib/firestore/services';
-import { Visit } from '@/types';
+import { Visit, VisitTaskItem } from '@/types';
 import TopBar from '@/components/layout/TopBar';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -35,6 +35,8 @@ export default function ActiveVehiclesPage() {
   const [tab, setTab] = useState<TabType>('active');
   const [filterDay, setFilterDay] = useState(getDateInputValue(new Date()));
   const [now, setNow] = useState(() => new Date());
+  const [taskDraftByVisit, setTaskDraftByVisit] = useState<Record<string, string>>({});
+  const [savingTaskVisitId, setSavingTaskVisitId] = useState<string | null>(null);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -89,6 +91,53 @@ export default function ActiveVehiclesPage() {
   });
   const filteredRevenue = historyVisits.reduce((sum, visit) => sum + (visit.totalPrice || 0), 0);
 
+  const setVisitChecklistLocally = (visitId: string, taskChecklist: VisitTaskItem[]) => {
+    setVisits((prev) =>
+      prev.map((visit) =>
+        visit.id === visitId ? { ...visit, taskChecklist } : visit
+      )
+    );
+  };
+
+  const persistVisitChecklist = async (visitId: string, taskChecklist: VisitTaskItem[]) => {
+    setSavingTaskVisitId(visitId);
+    try {
+      await updateVisitTaskChecklist(visitId, taskChecklist);
+      setVisitChecklistLocally(visitId, taskChecklist);
+    } finally {
+      setSavingTaskVisitId(null);
+    }
+  };
+
+  const handleToggleTask = async (visit: Visit, taskId: string) => {
+    const nextChecklist = (visit.taskChecklist || []).map((task) =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+    await persistVisitChecklist(visit.id, nextChecklist);
+  };
+
+  const handleRemoveTask = async (visit: Visit, taskId: string) => {
+    const nextChecklist = (visit.taskChecklist || []).filter((task) => task.id !== taskId);
+    await persistVisitChecklist(visit.id, nextChecklist);
+  };
+
+  const handleAddTask = async (visit: Visit) => {
+    const draft = (taskDraftByVisit[visit.id] || '').trim();
+    if (!draft) return;
+
+    const nextChecklist = [
+      ...(visit.taskChecklist || []),
+      {
+        id: `manual-${Date.now()}`,
+        title: draft,
+        completed: false,
+      },
+    ];
+
+    setTaskDraftByVisit((prev) => ({ ...prev, [visit.id]: '' }));
+    await persistVisitChecklist(visit.id, nextChecklist);
+  };
+
   return (
     <>
       <TopBar title="Vehículos" />
@@ -140,6 +189,7 @@ export default function ActiveVehiclesPage() {
                     <th>Entrada</th>
                     <th>Tiempo</th>
                     <th>Notas</th>
+                    <th>Tareas</th>
                     <th>Acción</th>
                   </tr>
                 </thead>
@@ -156,13 +206,81 @@ export default function ActiveVehiclesPage() {
                       </td>
                       <td data-label="Servicio">
                         <div>{visit.service?.name}</div>
-                        <span className={`badge ${visit.service?.type === 'hourly' ? 'badge-hourly' : 'badge-fixed'}`}>
-                          {visit.service?.type === 'hourly' ? 'Por hora' : 'Precio fijo'}
+                        <span
+                          className={`badge ${
+                            visit.service?.type === 'hourly'
+                              ? 'badge-hourly'
+                              : visit.service?.type === 'open'
+                                ? 'badge-open'
+                                : 'badge-fixed'
+                          }`}
+                        >
+                          {visit.service?.type === 'hourly'
+                            ? 'Por hora'
+                            : visit.service?.type === 'open'
+                              ? 'Variable'
+                              : 'Precio fijo'}
                         </span>
                       </td>
                       <td data-label="Entrada">{visit.entryTime.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</td>
                       <td data-label="Tiempo" className={styles.duration}>{formatDuration(visit.entryTime, now)}</td>
                       <td data-label="Notas">{visit.notes || '—'}</td>
+                      <td data-label="Tareas">
+                        {visit.service?.type !== 'open' ? (
+                          '—'
+                        ) : (
+                          <div className={styles.taskCell}>
+                            <div className={styles.taskAddRow}>
+                              <input
+                                className={styles.taskInput}
+                                value={taskDraftByVisit[visit.id] || ''}
+                                onChange={(e) =>
+                                  setTaskDraftByVisit((prev) => ({
+                                    ...prev,
+                                    [visit.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="Nueva tarea"
+                              />
+                              <button
+                                type="button"
+                                className={styles.taskButton}
+                                onClick={() => handleAddTask(visit)}
+                                disabled={savingTaskVisitId === visit.id}
+                              >
+                                Agregar
+                              </button>
+                            </div>
+                            {(visit.taskChecklist || []).length === 0 ? (
+                              <span className={styles.taskEmpty}>Sin tareas</span>
+                            ) : (
+                              <ul className={styles.taskList}>
+                                {(visit.taskChecklist || []).map((task) => (
+                                  <li key={task.id} className={styles.taskRow}>
+                                    <label className={styles.taskCheck}>
+                                      <input
+                                        type="checkbox"
+                                        checked={task.completed}
+                                        onChange={() => handleToggleTask(visit, task.id)}
+                                        disabled={savingTaskVisitId === visit.id}
+                                      />
+                                      <span className={task.completed ? styles.taskDone : ''}>{task.title}</span>
+                                    </label>
+                                    <button
+                                      type="button"
+                                      className={styles.taskRemove}
+                                      onClick={() => handleRemoveTask(visit, task.id)}
+                                      disabled={savingTaskVisitId === visit.id}
+                                    >
+                                      Quitar
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td data-label="Acción" className={styles.actionCell}>
                         <Link href={`/vehicles/exit/${visit.id}`}>
                           <Button size="sm">Registrar salida</Button>

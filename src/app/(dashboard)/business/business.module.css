@@ -1,0 +1,38 @@
+.typeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.typeTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.typeHint {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+}
+
+.typeOption {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.typeOption input {
+  width: 1rem;
+  height: 1rem;
+}

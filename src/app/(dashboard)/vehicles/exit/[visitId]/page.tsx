@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import TopBar from '@/components/layout/TopBar';
-import { calculateHourlyPriceWithTolerance, formatDurationLong, normalizePhoneForWhatsapp } from '@/lib/utils';
+import { applyMessageTemplate, calculateHourlyPriceWithTolerance, formatDurationLong, normalizePhoneForWhatsapp } from '@/lib/utils';
 import styles from './exit.module.css';
 
 export default function VehicleExitPage() {
@@ -66,6 +66,9 @@ export default function VehicleExitPage() {
     if (svc.type === 'fixed') {
       return svc.price;
     }
+    if (svc.type === 'open') {
+      return 0;
+    }
     return calculateHourlyPriceWithTolerance(
       entryTime,
       svc.price,
@@ -94,12 +97,42 @@ export default function VehicleExitPage() {
       if (service.type !== 'hourly') {
         const phone = normalizePhoneForWhatsapp(vehicle.clientPhone || '');
         if (phone) {
-          const message = [
+          const defaultMessage = [
             `Hola ${vehicle.clientName || 'cliente'}!`,
             `Tu vehiculo ${vehicle.plate} ya esta pronto para retirar.`,
             `Total a abonar: $${finalPrice}.`,
             'Te esperamos. Gracias!',
           ].join('\n');
+
+          const customTemplate = service.whatsappMessageTemplate || '';
+          const hasCustomTemplate = customTemplate.trim().length > 0;
+          const baseMessage = hasCustomTemplate
+            ? applyMessageTemplate(customTemplate, {
+                cliente: vehicle.clientName || 'cliente',
+                placa: vehicle.plate || '-',
+                marca: vehicle.brand || '-',
+                servicio: service.name || '-',
+                precioFinal: String(finalPrice),
+              })
+            : defaultMessage;
+
+          let message = baseMessage;
+
+          if (service.type === 'open') {
+            const completedTasks = (visit.taskChecklist || []).filter((task) => task.completed);
+            const pendingTasks = (visit.taskChecklist || []).filter((task) => !task.completed);
+
+            const completedBlock = completedTasks.length > 0
+              ? completedTasks.map((task) => `- ${task.title}`).join('\n')
+              : '- No se registraron tareas completadas';
+
+            const pendingBlock = pendingTasks.length > 0
+              ? pendingTasks.map((task) => `- ${task.title}`).join('\n')
+              : '- No quedaron tareas pendientes';
+
+            message = `${baseMessage}\n\nTrabajos realizados:\n${completedBlock}\n\nPendientes:\n${pendingBlock}`;
+          }
+
           const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
           setWhatsAppUrl(url);
           window.open(url, '_blank', 'noopener,noreferrer');
@@ -170,13 +203,25 @@ export default function VehicleExitPage() {
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Tipo</span>
-                <span className={`badge ${service.type === 'hourly' ? 'badge-hourly' : 'badge-fixed'}`}>
-                  {service.type === 'hourly' ? 'Por hora' : 'Precio fijo'}
+                <span
+                  className={`badge ${
+                    service.type === 'hourly'
+                      ? 'badge-hourly'
+                      : service.type === 'open'
+                        ? 'badge-open'
+                        : 'badge-fixed'
+                  }`}
+                >
+                  {service.type === 'hourly'
+                    ? 'Por hora'
+                    : service.type === 'open'
+                      ? 'Variable'
+                      : 'Precio fijo'}
                 </span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Precio base</span>
-                <span>${service.price}</span>
+                <span>{service.type === 'open' ? 'A definir' : `$${service.price}`}</span>
               </div>
             </div>
           </Card>

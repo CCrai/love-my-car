@@ -22,6 +22,7 @@ import styles from './services.module.css';
 const serviceTypeOptions = [
   { value: 'fixed', label: 'Precio fijo' },
   { value: 'hourly', label: 'Por hora' },
+  { value: 'open', label: 'Variable' },
 ];
 
 const minimumMinutesOptions = [
@@ -54,6 +55,8 @@ export default function ServicesPage() {
     type: 'fixed' as Service['type'],
     isDefault: false,
     whatsappMessageTemplate: '',
+    taskChecklist: [] as string[],
+    newTask: '',
     minimumChargeMinutes: '60' as '30' | '60',
     toleranceMinutes: '15' as '15' | '30' | '60',
     toleranceChargeMode: 'tolerance' as 'tolerance' | 'half_hour' | 'hour',
@@ -81,13 +84,25 @@ export default function ServicesPage() {
     setLoading(true);
     setError('');
     try {
+      const parsedPrice =
+        formData.type === 'open'
+          ? 0
+          : Number(formData.price.replace(',', '.'));
+
+      if (formData.type !== 'open' && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
+        setError('Ingresa un precio valido mayor o igual a 0.');
+        setLoading(false);
+        return;
+      }
+
       if (editingService) {
         const updatePayload: Partial<Omit<Service, 'id'>> = {
           name: formData.name,
-          price: parseFloat(formData.price),
+          price: parsedPrice,
           type: formData.type,
           isDefault: formData.isDefault,
           whatsappMessageTemplate: formData.whatsappMessageTemplate,
+          taskChecklist: formData.taskChecklist,
         };
         if (formData.type === 'hourly') {
           updatePayload.minimumChargeMinutes = Number(formData.minimumChargeMinutes) as 30 | 60;
@@ -102,12 +117,13 @@ export default function ServicesPage() {
         await createService(
           currentBusiness.id,
           formData.name,
-          parseFloat(formData.price),
+          parsedPrice,
           formData.type,
           formData.type === 'hourly' ? (Number(formData.minimumChargeMinutes) as 30 | 60) : undefined,
           formData.type === 'hourly' ? (Number(formData.toleranceMinutes) as 15 | 30 | 60) : undefined,
           formData.type === 'hourly' ? formData.toleranceChargeMode : undefined,
           formData.whatsappMessageTemplate,
+          formData.taskChecklist,
           formData.isDefault
         );
       }
@@ -120,6 +136,8 @@ export default function ServicesPage() {
         type: 'fixed',
         isDefault: false,
         whatsappMessageTemplate: '',
+        taskChecklist: [],
+        newTask: '',
         minimumChargeMinutes: '60',
         toleranceMinutes: '15',
         toleranceChargeMode: 'tolerance',
@@ -139,6 +157,8 @@ export default function ServicesPage() {
       type: service.type,
       isDefault: !!service.isDefault,
       whatsappMessageTemplate: service.whatsappMessageTemplate || '',
+      taskChecklist: service.taskChecklist || [],
+      newTask: '',
       minimumChargeMinutes: String(service.minimumChargeMinutes || service.minimumMinutes || 60) as '30' | '60',
       toleranceMinutes: String(service.toleranceMinutes || service.billingStepMinutes || 15) as '15' | '30' | '60',
       toleranceChargeMode: (service.toleranceChargeMode || 'tolerance') as 'tolerance' | 'half_hour' | 'hour',
@@ -175,9 +195,28 @@ export default function ServicesPage() {
       type: 'fixed',
       isDefault: false,
       whatsappMessageTemplate: '',
+      taskChecklist: [],
+      newTask: '',
       minimumChargeMinutes: '60',
       toleranceMinutes: '15',
       toleranceChargeMode: 'tolerance',
+    });
+  };
+
+  const handleAddTask = () => {
+    const nextTask = formData.newTask.trim();
+    if (!nextTask) return;
+    setFormData({
+      ...formData,
+      taskChecklist: [...formData.taskChecklist, nextTask],
+      newTask: '',
+    });
+  };
+
+  const handleRemoveTask = (index: number) => {
+    setFormData({
+      ...formData,
+      taskChecklist: formData.taskChecklist.filter((_, taskIndex) => taskIndex !== index),
     });
   };
 
@@ -210,17 +249,26 @@ export default function ServicesPage() {
                   placeholder="Ej: Lavado básico"
                   required
                 />
-                <Input
-                  id="service-price"
-                  label="Precio ($)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="0.00"
-                  required
-                />
+                {formData.type !== 'open' ? (
+                  <Input
+                    id="service-price"
+                    label="Precio ($)"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    placeholder="0.00"
+                    required
+                  />
+                ) : (
+                  <Input
+                    id="service-price-open"
+                    label="Precio inicial"
+                    value="A definir al finalizar el trabajo"
+                    disabled
+                  />
+                )}
               </div>
               <Select
                 id="service-type"
@@ -280,6 +328,42 @@ export default function ServicesPage() {
                   </p>
                 </>
               )}
+              {formData.type === 'open' && (
+                <div className={styles.taskGroup}>
+                  <label htmlFor="service-task" className={styles.templateLabel}>
+                    Lista de tareas del servicio
+                  </label>
+                  <div className={styles.taskRow}>
+                    <Input
+                      id="service-task"
+                      value={formData.newTask}
+                      onChange={(e) => setFormData({ ...formData, newTask: e.target.value })}
+                      placeholder="Ej: Cambio de aceite"
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddTask}>
+                      Agregar tarea
+                    </Button>
+                  </div>
+                  {formData.taskChecklist.length === 0 ? (
+                    <p className={styles.templateHelp}>No hay tareas cargadas todavia.</p>
+                  ) : (
+                    <ul className={styles.taskList}>
+                      {formData.taskChecklist.map((task, index) => (
+                        <li key={`${task}-${index}`} className={styles.taskItem}>
+                          <span>{task}</span>
+                          <button
+                            type="button"
+                            className={styles.removeTaskButton}
+                            onClick={() => handleRemoveTask(index)}
+                          >
+                            Quitar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   type="checkbox"
@@ -326,9 +410,15 @@ export default function ServicesPage() {
                     </td>
                     <td>
                       <span
-                        className={`badge ${service.type === 'hourly' ? 'badge-hourly' : 'badge-fixed'}`}
+                        className={`badge ${
+                          service.type === 'hourly'
+                            ? 'badge-hourly'
+                            : service.type === 'open'
+                              ? 'badge-open'
+                              : 'badge-fixed'
+                        }`}
                       >
-                        {service.type === 'hourly' ? 'Por hora' : 'Precio fijo'}
+                        {service.type === 'hourly' ? 'Por hora' : service.type === 'open' ? 'Variable' : 'Precio fijo'}
                       </span>
                     </td>
                     <td>
@@ -347,14 +437,16 @@ export default function ServicesPage() {
                                 ? 'media hora'
                                 : `${service.toleranceMinutes || service.billingStepMinutes || 15} min`
                           }`
-                        : 'Tarifa única'}
+                        : service.type === 'open'
+                          ? `Checklist: ${service.taskChecklist?.length || 0} tareas`
+                          : 'Tarifa única'}
                     </td>
                     <td>
                       {service.whatsappMessageTemplate?.trim()
                         ? 'Personalizado'
                         : 'Por defecto'}
                     </td>
-                    <td className={styles.price}>${service.price}</td>
+                    <td className={styles.price}>{service.type === 'open' ? 'A definir' : `$${service.price}`}</td>
                     {canManage && (
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>

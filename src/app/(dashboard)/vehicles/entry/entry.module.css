@@ -61,6 +61,85 @@
   color: #6b7280;
 }
 
+.taskBox {
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  border-radius: 10px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.taskTitle {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #312e81;
+}
+
+.taskHint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #4338ca;
+}
+
+.taskNewRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.taskList {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+}
+
+.taskCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
+.taskDone {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.taskRemove {
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: #b91c1c;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+}
+
+.taskEmpty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
 @media (max-width: 768px) {
   .steps {
     flex-wrap: wrap;
@@ -77,6 +156,10 @@
   }
 
   .phoneGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .taskNewRow {
     grid-template-columns: 1fr;
   }
 }

@@ -4,34 +4,40 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBusiness } from '@/lib/firestore/businesses';
-import { Business } from '@/types';
+import { BusinessCategory } from '@/types';
+import { businessCategoryOptions } from '@/lib/businessCategories';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
 import Card from '@/components/ui/Card';
 import styles from './create-business.module.css';
 
-const businessTypeOptions = [
-  { value: 'parking', label: '🅿️ Estacionamiento (Parking)' },
-  { value: 'lavadero', label: '🚿 Lavadero de Autos' },
-  { value: 'taller', label: '🔧 Taller Mecánico' },
-];
-
 export default function CreateBusinessPage() {
   const [name, setName] = useState('');
-  const [type, setType] = useState<Business['type']>('parking');
+  const [types, setTypes] = useState<BusinessCategory[]>(['parking']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, refreshUserProfile } = useAuth();
   const router = useRouter();
 
+  const handleToggleType = (nextType: BusinessCategory) => {
+    setTypes((prev) =>
+      prev.includes(nextType)
+        ? prev.filter((item) => item !== nextType)
+        : [...prev, nextType]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (types.length === 0) {
+      setError('Selecciona al menos un rubro para el negocio.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      await createBusiness(name, type, user.uid);
+      await createBusiness(name, types, user.uid);
       await refreshUserProfile();
       router.push('/dashboard');
     } catch {
@@ -63,13 +69,25 @@ export default function CreateBusinessPage() {
               placeholder="Ej: Parking Central"
               required
             />
-            <Select
-              id="business-type"
-              label="Tipo de negocio"
-              options={businessTypeOptions}
-              value={type}
-              onChange={(e) => setType(e.target.value as Business['type'])}
-            />
+            <div className={styles.typeGroup}>
+              <p className={styles.typeTitle}>¿Que servicios ofrece tu negocio?</p>
+              <p className={styles.typeHint}>Puedes seleccionar mas de una opcion.</p>
+              <div className={styles.typeGrid}>
+                {businessCategoryOptions.map((option) => {
+                  const checked = types.includes(option.value);
+                  return (
+                    <label key={option.value} className={styles.typeOption}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => handleToggleType(option.value)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
             <Button type="submit" loading={loading} size="lg" style={{ width: '100%' }}>
               Crear negocio
             </Button>

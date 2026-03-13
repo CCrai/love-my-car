@@ -50,8 +50,8 @@
 .businessType {
   font-size: 0.75rem;
   color: #3b82f6;
-  text-transform: capitalize;
   font-weight: 500;
+  white-space: normal;
 }
 
 .businessName {

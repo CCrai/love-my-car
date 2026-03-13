@@ -23,19 +23,25 @@ export async function createService(
   toleranceMinutes?: Service['toleranceMinutes'],
   toleranceChargeMode?: Service['toleranceChargeMode'],
   whatsappMessageTemplate?: string,
+  taskChecklist?: string[],
   isDefault?: boolean
 ): Promise<Service> {
   const normalizedTemplate =
     typeof whatsappMessageTemplate === 'string' ? whatsappMessageTemplate : '';
+  const normalizedChecklist =
+    type === 'open'
+      ? (taskChecklist || []).map((task) => task.trim()).filter(Boolean)
+      : [];
 
   const data: Omit<Service, 'id'> = {
     businessId,
     name,
-    price,
+    price: type === 'open' ? 0 : price,
     type,
     isDefault: !!isDefault,
     // Keep the template exactly as entered so line breaks/spacing are preserved.
     whatsappMessageTemplate: normalizedTemplate,
+    taskChecklist: normalizedChecklist,
   };
   if (type === 'hourly') {
     data.minimumChargeMinutes = minimumChargeMinutes ?? 60;
@@ -83,13 +89,26 @@ export async function updateService(
   data: Partial<Omit<Service, 'id'>>
 ): Promise<void> {
   const payload: Record<string, unknown> = { ...data };
-  if (data.type === 'fixed') {
+  if (data.type === 'open') {
+    payload.price = 0;
+  }
+
+  if (data.type && data.type !== 'hourly') {
     payload.minimumChargeMinutes = deleteField();
     payload.toleranceMinutes = deleteField();
     payload.toleranceChargeMode = deleteField();
     payload.minimumMinutes = deleteField();
     payload.billingStepMinutes = deleteField();
   }
+
+  if (data.type && data.type !== 'open') {
+    payload.taskChecklist = deleteField();
+  }
+
+  if (Array.isArray(data.taskChecklist)) {
+    payload.taskChecklist = data.taskChecklist.map((task) => task.trim()).filter(Boolean);
+  }
+
   await updateDoc(doc(db, 'services', id), payload);
 }
 

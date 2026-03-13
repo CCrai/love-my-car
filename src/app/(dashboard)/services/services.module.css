@@ -49,6 +49,52 @@
   color: #6b7280;
 }
 
+.taskGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.taskRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.taskList {
+  margin: 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.removeTaskButton {
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  background: #fff;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+}
+
+.removeTaskButton:hover {
+  background: #fef2f2;
+}
+
 @media (max-width: 768px) {
   .actions {
     justify-content: stretch;
@@ -64,5 +110,9 @@
 
   .templateInput {
     min-height: 7.5rem;
+  }
+
+  .taskRow {
+    grid-template-columns: 1fr;
   }
 }

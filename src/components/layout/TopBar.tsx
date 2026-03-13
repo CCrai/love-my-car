@@ -1,6 +1,7 @@
 'use client';
 
 import { useBusinessContext } from '@/contexts/BusinessContext';
+import { formatBusinessTypes, getBusinessTypeList } from '@/lib/businessCategories';
 import styles from './TopBar.module.css';
 
 interface TopBarProps {
@@ -29,7 +30,9 @@ export default function TopBar({ title }: TopBarProps) {
       </div>
       {currentBusiness && (
         <div className={styles.businessBadge}>
-          <span className={styles.businessType}>{currentBusiness.type}</span>
+          <span className={styles.businessType}>
+            {formatBusinessTypes(getBusinessTypeList(currentBusiness)) || 'Sin rubros'}
+          </span>
           <span className={styles.businessName}>{currentBusiness.name}</span>
         </div>
       )}

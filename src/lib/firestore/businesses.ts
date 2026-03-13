@@ -11,16 +11,20 @@ import {
   arrayUnion,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Business } from '@/types';
+import { Business, BusinessCategory } from '@/types';
 
 export async function createBusiness(
   name: string,
-  type: Business['type'],
+  types: BusinessCategory[],
   ownerId: string
 ): Promise<Business> {
+  const normalizedTypes = Array.from(new Set(types)).filter(Boolean);
+  const primaryType = normalizedTypes[0] || 'parking';
+
   const businessData = {
     name,
-    type,
+    types: normalizedTypes,
+    type: primaryType,
     ownerId,
     createdAt: serverTimestamp(),
   };
@@ -38,7 +42,24 @@ export async function createBusiness(
     businesses: arrayUnion(docRef.id),
   });
 
-  return { id: docRef.id, name, type, ownerId, createdAt: new Date() };
+  return { id: docRef.id, name, types: normalizedTypes, type: primaryType, ownerId, createdAt: new Date() };
+}
+
+export async function updateBusinessInfo(
+  id: string,
+  data: {
+    name: string;
+    types: BusinessCategory[];
+  }
+): Promise<void> {
+  const normalizedTypes = Array.from(new Set(data.types)).filter(Boolean);
+  const primaryType = normalizedTypes[0] || 'parking';
+
+  await updateDoc(doc(db, 'businesses', id), {
+    name: data.name,
+    types: normalizedTypes,
+    type: primaryType,
+  });
 }
 
 export async function getBusinessById(id: string): Promise<Business | null> {

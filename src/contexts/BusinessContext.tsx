@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface BusinessContextType {
   currentBusiness: Business | null;
   setCurrentBusinessId: (id: string) => void;
+  refreshCurrentBusiness: () => Promise<void>;
   loading: boolean;
 }
 
@@ -18,6 +19,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [currentBusiness, setCurrentBusiness] = useState<Business | null>(null);
   const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const storageKey = user ? `selectedBusinessId:${user.uid}` : null;
   const userBusinesses = useMemo(() => userProfile?.businesses || [], [userProfile?.businesses]);
 
@@ -65,16 +67,25 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         // Business fetch failed; currentBusiness remains null
       })
       .finally(() => setLoading(false));
-  }, [currentBusinessId, userBusinesses, storageKey]);
+  }, [currentBusinessId, userBusinesses, storageKey, refreshTick]);
 
   const handleSetCurrentBusinessId = (id: string) => {
     if (!userBusinesses.includes(id)) return;
     setCurrentBusinessId(id);
   };
 
+  const refreshCurrentBusiness = async () => {
+    setRefreshTick((prev) => prev + 1);
+  };
+
   return (
     <BusinessContext.Provider
-      value={{ currentBusiness, setCurrentBusinessId: handleSetCurrentBusinessId, loading }}
+      value={{
+        currentBusiness,
+        setCurrentBusinessId: handleSetCurrentBusinessId,
+        refreshCurrentBusiness,
+        loading,
+      }}
     >
       {children}
     </BusinessContext.Provider>

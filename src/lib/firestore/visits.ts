@@ -12,14 +12,60 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Visit } from '@/types';
+import { Visit, VisitTaskItem } from '@/types';
+
+function normalizeVisitTaskChecklist(raw: unknown): VisitTaskItem[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((item, index) => {
+      if (typeof item === 'string') {
+        const title = item.trim();
+        if (!title) return null;
+        return {
+          id: `legacy-${index}`,
+          title,
+          completed: false,
+        } as VisitTaskItem;
+      }
+
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const title = typeof record.title === 'string' ? record.title.trim() : '';
+      if (!title) return null;
+
+      const id = typeof record.id === 'string' && record.id.trim().length > 0
+        ? record.id
+        : `task-${index}`;
+
+      return {
+        id,
+        title,
+        completed: !!record.completed,
+      } as VisitTaskItem;
+    })
+    .filter((item): item is VisitTaskItem => item !== null);
+}
 
 export async function createVisit(
   businessId: string,
   vehicleId: string,
   serviceId: string,
-  notes: string = ''
+  notes: string = '',
+  taskChecklist: VisitTaskItem[] = []
 ): Promise<Visit> {
+  const normalizedTaskChecklist = taskChecklist
+    .map((task, index) => {
+      const title = task.title?.trim();
+      if (!title) return null;
+      return {
+        id: task.id?.trim() || `task-${index}`,
+        title,
+        completed: !!task.completed,
+      };
+    })
+    .filter((item): item is VisitTaskItem => item !== null);
+
   const data = {
     businessId,
     vehicleId,
@@ -29,6 +75,7 @@ export async function createVisit(
     status: 'active' as const,
     totalPrice: 0,
     notes,
+    taskChecklist: normalizedTaskChecklist,
   };
   const docRef = await addDoc(collection(db, 'visits'), data);
   return { id: docRef.id, ...data, entryTime: new Date() };
@@ -48,6 +95,7 @@ export async function getActiveVisits(businessId: string): Promise<Visit[]> {
       ...data,
       entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
       exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+      taskChecklist: normalizeVisitTaskChecklist(data.taskChecklist),
     } as Visit;
   });
 }
@@ -70,6 +118,7 @@ export async function getActiveVisitByVehicle(
     ...data,
     entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
     exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+    taskChecklist: normalizeVisitTaskChecklist(data.taskChecklist),
   } as Visit;
 }
 
@@ -83,6 +132,7 @@ export async function getVisitsByBusiness(businessId: string): Promise<Visit[]> 
       ...data,
       entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
       exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+      taskChecklist: normalizeVisitTaskChecklist(data.taskChecklist),
     } as Visit;
   });
 }
@@ -100,6 +150,7 @@ export function subscribeVisitsByBusiness(
         ...data,
         entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
         exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+        taskChecklist: normalizeVisitTaskChecklist(data.taskChecklist),
       } as Visit;
     });
     onVisits(visits);
@@ -138,7 +189,29 @@ export async function getVisitById(id: string): Promise<Visit | null> {
     ...data,
     entryTime: data.entryTime instanceof Timestamp ? data.entryTime.toDate() : new Date(),
     exitTime: data.exitTime instanceof Timestamp ? data.exitTime.toDate() : null,
+    taskChecklist: normalizeVisitTaskChecklist(data.taskChecklist),
   } as Visit;
+}
+
+export async function updateVisitTaskChecklist(
+  visitId: string,
+  taskChecklist: VisitTaskItem[]
+): Promise<void> {
+  const normalizedTaskChecklist = taskChecklist
+    .map((task, index) => {
+      const title = task.title?.trim();
+      if (!title) return null;
+      return {
+        id: task.id?.trim() || `task-${index}`,
+        title,
+        completed: !!task.completed,
+      };
+    })
+    .filter((item): item is VisitTaskItem => item !== null);
+
+  await updateDoc(doc(db, 'visits', visitId), {
+    taskChecklist: normalizedTaskChecklist,
+  });
 }
 
 export async function completeVisit(

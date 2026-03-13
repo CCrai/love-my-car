@@ -6,7 +6,7 @@ import { useBusinessContext } from "@/contexts/BusinessContext";
 import { getVehicleByPlate, createVehicle } from "@/lib/firestore/vehicles";
 import { createVisit, getActiveVisitByVehicle } from "@/lib/firestore/visits";
 import { getServicesByBusiness } from "@/lib/firestore/services";
-import { Service, Vehicle } from "@/types";
+import { Service, Vehicle, VisitTaskItem } from "@/types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -57,18 +57,42 @@ export default function VehicleEntryPage() {
   const [showActiveRedirect, setShowActiveRedirect] = useState(false);
   const [phonePrefix, setPhonePrefix] = useState("+598");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [visitTaskChecklist, setVisitTaskChecklist] = useState<VisitTaskItem[]>([]);
+  const [newVisitTask, setNewVisitTask] = useState("");
+
+  const buildVisitChecklistFromService = (service: Service | undefined): VisitTaskItem[] => {
+    if (!service || service.type !== "open") return [];
+    return (service.taskChecklist || [])
+      .map((title, index) => {
+        const normalized = title.trim();
+        if (!normalized) return null;
+        return {
+          id: `svc-${Date.now()}-${index}`,
+          title: normalized,
+          completed: false,
+        } as VisitTaskItem;
+      })
+      .filter((task): task is VisitTaskItem => task !== null);
+  };
 
   useEffect(() => {
     if (currentBusiness) {
       getServicesByBusiness(currentBusiness.id).then((result) => {
         setServices(result);
         const defaultService = result.find((service) => service.isDefault);
-        setSelectedServiceId(
-          (prev) => prev || defaultService?.id || result[0]?.id || "",
-        );
+        const defaultServiceId = defaultService?.id || result[0]?.id || "";
+        setSelectedServiceId((prev) => prev || defaultServiceId);
+        const initialService = result.find((service) => service.id === defaultServiceId);
+        setVisitTaskChecklist(buildVisitChecklistFromService(initialService));
       });
     }
   }, [currentBusiness]);
+
+  useEffect(() => {
+    const selectedService = services.find((service) => service.id === selectedServiceId);
+    setVisitTaskChecklist(buildVisitChecklistFromService(selectedService));
+    setNewVisitTask("");
+  }, [selectedServiceId, services]);
 
   const handleSearchPlate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +177,7 @@ export default function VehicleEntryPage() {
         vehicleId,
         selectedServiceId,
         notes,
+        visitTaskChecklist,
       );
 
       const phone = normalizePhoneForWhatsapp(vehicle.clientPhone || "");
@@ -198,8 +223,39 @@ export default function VehicleEntryPage() {
 
   const serviceOptions = services.map((s) => ({
     value: s.id,
-    label: `${s.name}${s.isDefault ? " (Sugerido)" : ""} - $${s.price} (${s.type === "hourly" ? "Por hora" : "Precio fijo"})`,
+    label: `${s.name}${s.isDefault ? " (Sugerido)" : ""} - ${
+      s.type === "open" ? "A definir" : `$${s.price}`
+    } (${s.type === "hourly" ? "Por hora" : s.type === "open" ? "Variable" : "Precio fijo"})`,
   }));
+
+  const selectedService = services.find((service) => service.id === selectedServiceId);
+
+  const handleAddVisitTask = () => {
+    const title = newVisitTask.trim();
+    if (!title) return;
+
+    setVisitTaskChecklist((prev) => [
+      ...prev,
+      {
+        id: `manual-${Date.now()}`,
+        title,
+        completed: false,
+      },
+    ]);
+    setNewVisitTask("");
+  };
+
+  const handleToggleVisitTask = (taskId: string) => {
+    setVisitTaskChecklist((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task,
+      ),
+    );
+  };
+
+  const handleRemoveVisitTask = (taskId: string) => {
+    setVisitTaskChecklist((prev) => prev.filter((task) => task.id !== taskId));
+  };
 
   return (
     <>
@@ -390,6 +446,51 @@ export default function VehicleEntryPage() {
                   onChange={(e) => setSelectedServiceId(e.target.value)}
                   required
                 />
+              )}
+              {selectedService?.type === "open" && (
+                <div className={styles.taskBox}>
+                  <p className={styles.taskTitle}>Checklist del trabajo (tipo Variable)</p>
+                  <p className={styles.taskHint}>
+                    Partimos de las tareas por defecto del servicio, y puedes agregar o quitar items para esta visita.
+                  </p>
+                  <div className={styles.taskNewRow}>
+                    <Input
+                      id="new-visit-task"
+                      label="Agregar tarea"
+                      value={newVisitTask}
+                      onChange={(e) => setNewVisitTask(e.target.value)}
+                      placeholder="Ej: Revision de frenos"
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddVisitTask}>
+                      Agregar
+                    </Button>
+                  </div>
+                  {visitTaskChecklist.length === 0 ? (
+                    <p className={styles.taskEmpty}>No hay tareas para esta visita.</p>
+                  ) : (
+                    <ul className={styles.taskList}>
+                      {visitTaskChecklist.map((task) => (
+                        <li key={task.id} className={styles.taskItem}>
+                          <label className={styles.taskCheck}>
+                            <input
+                              type="checkbox"
+                              checked={task.completed}
+                              onChange={() => handleToggleVisitTask(task.id)}
+                            />
+                            <span className={task.completed ? styles.taskDone : ""}>{task.title}</span>
+                          </label>
+                          <button
+                            type="button"
+                            className={styles.taskRemove}
+                            onClick={() => handleRemoveVisitTask(task.id)}
+                          >
+                            Quitar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
               <Input
                 id="visitNotes"
