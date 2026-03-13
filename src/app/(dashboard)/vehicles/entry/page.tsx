@@ -169,8 +169,9 @@ export default function VehicleEntryPage() {
           `Código de retiro: ${pickupCode}.`,
           "Presenta este mensaje al momento de retirar.",
         ].join("\n");
-        const customTemplate = selectedService?.whatsappMessageTemplate?.trim();
-        const message = customTemplate
+        const customTemplate = selectedService?.whatsappMessageTemplate || "";
+        const hasCustomTemplate = customTemplate.trim().length > 0;
+        const message = hasCustomTemplate
           ? applyMessageTemplate(customTemplate, {
               cliente: vehicle.clientName || "cliente",
               negocio: currentBusiness.name,

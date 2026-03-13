@@ -25,13 +25,17 @@ export async function createService(
   whatsappMessageTemplate?: string,
   isDefault?: boolean
 ): Promise<Service> {
+  const normalizedTemplate =
+    typeof whatsappMessageTemplate === 'string' ? whatsappMessageTemplate : '';
+
   const data: Omit<Service, 'id'> = {
     businessId,
     name,
     price,
     type,
     isDefault: !!isDefault,
-    whatsappMessageTemplate: whatsappMessageTemplate?.trim() || '',
+    // Keep the template exactly as entered so line breaks/spacing are preserved.
+    whatsappMessageTemplate: normalizedTemplate,
   };
   if (type === 'hourly') {
     data.minimumChargeMinutes = minimumChargeMinutes ?? 60;
